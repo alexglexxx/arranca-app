@@ -247,12 +247,12 @@ function SolicitarForm() {
         onChange={(e) => setNombreTitularCuenta(e.target.value)}
       />
 
-      <p className="text-[11.5px] font-bold text-textDim uppercase tracking-wider mb-3 mt-7">
+      <p className="text-[14.5px] font-bold text-textDim uppercase tracking-wider mb-3 mt-7">
         Sobre tu trabajo
       </p>
 
       <div className="mb-4">
-        <label className="block text-[13px] text-textDim mb-2 font-medium">
+        <label className="block text-[14.5px] text-textDim mb-2 font-medium">
           ¿En qué plataforma(s) trabajas?
         </label>
         <div className="flex flex-wrap gap-2">
@@ -261,7 +261,7 @@ function SolicitarForm() {
               key={p.id}
               type="button"
               onClick={() => togglePlataforma(p.id)}
-              className={`px-3.5 py-2 rounded-full text-[13px] font-medium border transition-colors ${
+              className={`px-3.5 py-2 rounded-full text-[14.5px] font-medium border transition-colors ${
                 plataformas.includes(p.id)
                   ? 'border-amber bg-amberDim text-amber'
                   : 'border-border text-textDim'
@@ -274,7 +274,7 @@ function SolicitarForm() {
       </div>
 
       <div className="mb-4">
-        <label className="block text-[13px] text-textDim mb-2 font-medium">
+        <label className="block text-[14.5px] text-textDim mb-2 font-medium">
           ¿Cuánto tiempo llevas trabajando como chofer?
         </label>
         <select
@@ -290,7 +290,7 @@ function SolicitarForm() {
       </div>
 
       <div className="mb-4">
-        <label className="block text-[13px] text-textDim mb-2 font-medium">Turno principal</label>
+        <label className="block text-[14.5px] text-textDim mb-2 font-medium">Turno principal</label>
         <select
           value={turnoPrincipal}
           onChange={(e) => setTurnoPrincipal(e.target.value as typeof turnoPrincipal)}
@@ -314,7 +314,7 @@ function SolicitarForm() {
       />
 
       <div className="mb-4">
-        <label className="block text-[13px] text-textDim mb-2 font-medium">
+        <label className="block text-[14.5px] text-textDim mb-2 font-medium">
           Ingreso promedio semanal
         </label>
         <select
@@ -333,14 +333,14 @@ function SolicitarForm() {
       <Field label="Zona o colonia donde trabajas" value={zona} onChange={(e) => setZona(e.target.value)} />
       <Field label="Ciudad / municipio" value={ciudad} onChange={(e) => setCiudad(e.target.value)} />
 
-      <p className="text-[11.5px] font-bold text-textDim uppercase tracking-wider mb-3 mt-7">
+      <p className="text-[14.5px] font-bold text-textDim uppercase tracking-wider mb-3 mt-7">
         Referencia familiar
       </p>
       {puedeElegirContacto && (
         <button
           type="button"
           onClick={handleElegirReferenciaFamiliar}
-          className="w-full border-2 border-dashed border-border rounded-[16px] py-3.5 mb-3 text-[13.5px] font-semibold text-amber flex items-center justify-center gap-2"
+          className="w-full border-2 border-dashed border-border rounded-[16px] py-3.5 mb-3 text-[14.5px] font-semibold text-amber flex items-center justify-center gap-2"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM12 14a7 7 0 0 0-7 7h14a7 7 0 0 0-7-7Z" />
@@ -352,14 +352,14 @@ function SolicitarForm() {
       <Field label="Teléfono" value={refFamiliarTelefono} onChange={(e) => setRefFamiliarTelefono(e.target.value)} />
       <Field label="Parentesco" placeholder="Ej. Hermano, esposa, mamá" value={refFamiliarRelacion} onChange={(e) => setRefFamiliarRelacion(e.target.value)} />
 
-      <p className="text-[11.5px] font-bold text-textDim uppercase tracking-wider mb-3 mt-7">
+      <p className="text-[14.5px] font-bold text-textDim uppercase tracking-wider mb-3 mt-7">
         Referencia — otro chofer
       </p>
       {puedeElegirContacto && (
         <button
           type="button"
           onClick={handleElegirReferenciaChofer}
-          className="w-full border-2 border-dashed border-border rounded-[16px] py-3.5 mb-3 text-[13.5px] font-semibold text-amber flex items-center justify-center gap-2"
+          className="w-full border-2 border-dashed border-border rounded-[16px] py-3.5 mb-3 text-[14.5px] font-semibold text-amber flex items-center justify-center gap-2"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM12 14a7 7 0 0 0-7 7h14a7 7 0 0 0-7-7Z" />
@@ -378,7 +378,7 @@ function SolicitarForm() {
           onChange={(e) => setAceptaCompromiso(e.target.checked)}
           className="mt-1 w-4 h-4 accent-amber"
         />
-        <span className="text-[12.5px] text-textDim leading-relaxed">
+        <span className="text-[14px] text-textDim leading-relaxed">
           Acepto que recibí en préstamo la cantidad que se me asignó, y me comprometo a
           pagarla según las condiciones mostradas (monto e interés correspondiente a la fecha
           en que liquide). Si me atraso varios días sin pagar, autorizo a que me contacten por

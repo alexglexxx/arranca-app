@@ -103,7 +103,7 @@ export default function KycPage() {
         onChange={(e) => setTarjetaCirculacion(e.target.files?.[0] || null)}
       />
 
-      <p className="text-[11px] font-bold text-textDim uppercase tracking-wider mb-2.5">
+      <p className="text-[14.5px] font-bold text-textDim uppercase tracking-wider mb-2.5">
         Tu identidad
       </p>
       <UploadBox
@@ -130,7 +130,7 @@ export default function KycPage() {
         onChange={(e) => setVideo(e.target.files?.[0] || null)}
       />
 
-      <p className="text-[11px] font-bold text-textDim uppercase tracking-wider mb-2.5 mt-2">
+      <p className="text-[14.5px] font-bold text-textDim uppercase tracking-wider mb-2.5 mt-2">
         Tu actividad
       </p>
       <UploadBox
@@ -143,7 +143,7 @@ export default function KycPage() {
       />
 
       <div className="bg-transparent border border-dashed border-border rounded-card p-[18px] mb-3.5">
-        <p className="text-[12.5px] text-textDim leading-relaxed">
+        <p className="text-[14px] text-textDim leading-relaxed">
           <strong className="text-text">Tip para el video:</strong> que se vea tu pantalla
           completa, tu nombre en el perfil y que puedas aceptar viajes.
         </p>

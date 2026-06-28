@@ -190,7 +190,7 @@ function PrestamoContent() {
 
       {prestamo.comprobantePagoUrl ? (
         <Card className="text-center">
-          <p className="text-[13.5px] text-textDim">
+          <p className="text-[14.5px] text-textDim">
             Ya recibimos tu comprobante. Estamos confirmando el pago.
           </p>
         </Card>
@@ -198,7 +198,7 @@ function PrestamoContent() {
         <>
           {usuarioIdAutenticado !== prestamo.usuarioId && (
             <Card className="bg-transparent border-amber/30">
-              <p className="text-[12.5px] text-amber leading-relaxed mb-3">
+              <p className="text-[14px] text-amber leading-relaxed mb-3">
                 Para subir tu comprobante, primero confirma que sigues siendo tú.
               </p>
               <Button variant="ghost" onClick={() => router.push('/registro')}>

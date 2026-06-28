@@ -56,13 +56,13 @@ export default function ReferidosAdminPage() {
   return (
     <div className="max-w-md mx-auto px-6 pt-8 pb-10 min-h-screen">
       <h1 className="font-display text-[22px] font-semibold mb-2">Recompensas pendientes</h1>
-      <p className="text-textDim text-[13.5px] mb-5">
+      <p className="text-textDim text-[14.5px] mb-5">
         Transfiere manualmente por SPEI, luego marca como pagado.
       </p>
 
       {pendientes.length === 0 && (
         <Card>
-          <p className="text-textDim text-[13.5px] py-2">No hay recompensas pendientes.</p>
+          <p className="text-textDim text-[14.5px] py-2">No hay recompensas pendientes.</p>
         </Card>
       )}
 

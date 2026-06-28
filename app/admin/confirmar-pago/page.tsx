@@ -100,7 +100,7 @@ function ConfirmarPagoForm() {
       </Card>
 
       <div className="mb-4">
-        <label className="block text-[13px] text-textDim mb-2 font-medium">
+        <label className="block text-[14.5px] text-textDim mb-2 font-medium">
           Monto recibido (confirma contra el comprobante)
         </label>
         <input

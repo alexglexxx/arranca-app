@@ -161,7 +161,7 @@ function RevisarForm() {
         </div>
         <div>
           <div className="font-semibold text-base">{usuario.nombre}</div>
-          <div className="text-[12.5px] text-textDim">
+          <div className="text-[14px] text-textDim">
             Solicita ${prestamo.monto} ·{' '}
             {usuario.prestamosCompletados > 0 ? `${usuario.prestamosCompletados + 1}º préstamo` : 'primera vez'}
           </div>
@@ -203,13 +203,13 @@ function RevisarForm() {
 
       {prestamo.notasAdmin && (
         <div className="bg-[#33201D] border border-danger/30 rounded-card p-3.5 mb-3.5">
-          <p className="text-[12.5px] text-danger leading-relaxed">{prestamo.notasAdmin}</p>
+          <p className="text-[14px] text-danger leading-relaxed">{prestamo.notasAdmin}</p>
         </div>
       )}
 
       {prestamo.cuestionario && (
         <Card>
-          <div className="text-[12.5px] leading-relaxed space-y-1.5">
+          <div className="text-[14px] leading-relaxed space-y-1.5">
             <p>
               <span className="text-textDim">Plataformas:</span>{' '}
               <strong>{prestamo.cuestionario.plataformas.join(', ')}</strong>
@@ -240,10 +240,10 @@ function RevisarForm() {
 
       {prestamo.cuestionario && (
         <Card>
-          <p className="text-[11px] font-bold text-textDim uppercase tracking-wider mb-2">
+          <p className="text-[14.5px] font-bold text-textDim uppercase tracking-wider mb-2">
             Referencias
           </p>
-          <div className="text-[12.5px] leading-relaxed space-y-2">
+          <div className="text-[14px] leading-relaxed space-y-2">
             <div>
               <span className="text-textDim">Familiar ({prestamo.cuestionario.referenciaFamiliar.relacion || 'sin especificar'}):</span>{' '}
               <strong>{prestamo.cuestionario.referenciaFamiliar.nombre}</strong> ·{' '}
@@ -282,7 +282,7 @@ function RevisarForm() {
                 </svg>
               )}
             </div>
-            <div className="text-[13.5px] leading-snug">
+            <div className="text-[14.5px] leading-snug">
               <b className="block">{item.titulo}</b>
               <span className="text-textDim text-xs">{item.descripcion}</span>
             </div>

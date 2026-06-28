@@ -35,6 +35,9 @@ module.exports = {
       minHeight: {
         screen: '100dvh',
       },
+      fontSize: {
+        xs: ['13px', { lineHeight: '1.4' }],
+      },
     },
   },
   plugins: [],

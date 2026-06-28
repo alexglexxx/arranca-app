@@ -44,7 +44,7 @@ export function Field({
 }: InputHTMLAttributes<HTMLInputElement> & { label: string }) {
   return (
     <div className="mb-4">
-      <label className="block text-[13px] text-textDim mb-2 font-semibold">{label}</label>
+      <label className="block text-[14.5px] text-textDim mb-2 font-semibold">{label}</label>
       <input
         className="w-full bg-surface border-2 border-border rounded-[16px] px-4 py-[16px] text-text text-base outline-none focus:border-amber transition-colors"
         {...props}
@@ -64,7 +64,7 @@ export function Card({ children, className = '' }: { children: ReactNode; classN
 export function CardRow({ label, value, valueClassName = '' }: { label: string; value: ReactNode; valueClassName?: string }) {
   return (
     <div className="flex justify-between items-baseline py-[9px] border-t border-border first:border-t-0">
-      <span className="text-[13.5px] text-textDim">{label}</span>
+      <span className="text-[14.5px] text-textDim">{label}</span>
       <span className={`text-[14.5px] font-semibold ${valueClassName}`}>{value}</span>
     </div>
   );

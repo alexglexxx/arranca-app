@@ -93,23 +93,23 @@ export default function AdminPage() {
             <div className="font-mono text-[21px] font-bold text-amber">
               ${capital.capitalPrestado.toLocaleString()}
             </div>
-            <div className="text-[11.5px] text-textDim mt-0.5">Capital prestado</div>
+            <div className="text-[14.5px] text-textDim mt-0.5">Capital prestado</div>
           </div>
           <div className="bg-surface border border-border rounded-card px-4 py-3.5">
             <div className="font-mono text-[21px] font-bold">
               ${capital.capitalDisponible.toLocaleString()}
             </div>
-            <div className="text-[11.5px] text-textDim mt-0.5">Disponible</div>
+            <div className="text-[14.5px] text-textDim mt-0.5">Disponible</div>
           </div>
         </div>
       )}
 
-      <p className="text-[11.5px] font-bold text-textDim uppercase tracking-wider mb-3">
+      <p className="text-[14.5px] font-bold text-textDim uppercase tracking-wider mb-3">
         Esperando revisión · {pendientes.length}
       </p>
       <Card className="px-[18px] py-1">
         {pendientes.length === 0 && (
-          <p className="text-textDim text-[13.5px] py-3">No hay solicitudes pendientes.</p>
+          <p className="text-textDim text-[14.5px] py-3">No hay solicitudes pendientes.</p>
         )}
         {pendientes.map((p) => (
           <Link
@@ -134,12 +134,12 @@ export default function AdminPage() {
         ))}
       </Card>
 
-      <p className="text-[11.5px] font-bold text-textDim uppercase tracking-wider mb-3 mt-6">
+      <p className="text-[14.5px] font-bold text-textDim uppercase tracking-wider mb-3 mt-6">
         Activos · {activos.length}
       </p>
       <Card className="px-[18px] py-1">
         {activos.length === 0 && (
-          <p className="text-textDim text-[13.5px] py-3">No hay préstamos activos.</p>
+          <p className="text-textDim text-[14.5px] py-3">No hay préstamos activos.</p>
         )}
         {activos.map((p) => {
           const vencido = p.fechaLimite ? Date.now() > p.fechaLimite : false;
@@ -177,7 +177,7 @@ export default function AdminPage() {
 
       <Link
         href="/admin/referidos"
-        className="block text-center text-[13px] text-amber mt-6 underline"
+        className="block text-center text-[14.5px] text-amber mt-6 underline"
       >
         Ver recompensas de referidos pendientes
       </Link>

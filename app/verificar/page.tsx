@@ -138,7 +138,7 @@ export default function VerificarPage() {
         </p>
       )}
 
-      <p className="text-[13px] text-textDim mb-5">
+      <p className="text-[14.5px] text-textDim mb-5">
         ¿No llegó?{' '}
         {segundosRestantes > 0 ? (
           <span>Reenviar código (0:{segundosRestantes.toString().padStart(2, '0')})</span>

@@ -79,7 +79,7 @@ export default function ReferidosPage() {
       </p>
 
       <Card className="text-center py-6">
-        <p className="text-[11.5px] text-textDim uppercase tracking-wider mb-2">Tu código</p>
+        <p className="text-[14.5px] text-textDim uppercase tracking-wider mb-2">Tu código</p>
         <p className="font-mono text-[28px] font-bold text-amber tracking-wider">
           {datos.codigoReferido}
         </p>
@@ -97,7 +97,7 @@ export default function ReferidosPage() {
       </Card>
 
       {datos.saldoRecompensas > 0 && (
-        <p className="text-[12.5px] text-textDim text-center leading-relaxed mt-2">
+        <p className="text-[14px] text-textDim text-center leading-relaxed mt-2">
           Te avisamos por WhatsApp cuando hagamos el depósito de tu saldo.
         </p>
       )}
