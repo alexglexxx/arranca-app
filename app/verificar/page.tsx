@@ -65,9 +65,6 @@ export default function VerificarPage() {
       const credencial = await confirmationResult.confirm(codigo);
       const firebaseUid = credencial.user.uid;
 
-      // Ahora que Firebase Auth confirmó el teléfono, se crea (o recupera)
-      // el documento de usuario en Firestore. Esta llamada SÍ pasa por la
-      // API route (Admin SDK), no escribe directo a Firestore desde el cliente.
       const nombre = sessionStorage.getItem('registro_nombre') || '';
       const correo = sessionStorage.getItem('registro_correo') || '';
       const codigoReferido = sessionStorage.getItem('codigo_referido') || undefined;
@@ -97,9 +94,6 @@ export default function VerificarPage() {
   }
 
   async function reenviarCodigo() {
-    // Para reenviar con Firebase Phone Auth hay que volver a llamar
-    // signInWithPhoneNumber — más simple regresar a /registro con los datos
-    // ya guardados en sessionStorage, en vez de duplicar la lógica aquí.
     router.push('/registro');
   }
 
@@ -117,7 +111,7 @@ export default function VerificarPage() {
         abajo.
       </p>
 
-      <div className="flex gap-2 mb-5">
+      <div className="flex gap-2 mb-5 justify-center">
         {digitos.map((digito, i) => (
           <input
             key={i}
@@ -131,7 +125,7 @@ export default function VerificarPage() {
             onChange={(e) => handleDigitoChange(i, e.target.value)}
             onKeyDown={(e) => handleKeyDown(i, e)}
             autoFocus={i === 0}
-            className={`flex-1 aspect-square bg-surface border rounded-field flex items-center justify-center font-mono text-lg font-bold text-center outline-none transition-colors ${
+            className={`w-11 h-14 flex-shrink-0 bg-surface border-2 rounded-[14px] flex items-center justify-center font-mono text-xl font-bold text-center outline-none transition-colors ${
               digito ? 'border-amber text-amber' : 'border-border text-text'
             }`}
           />

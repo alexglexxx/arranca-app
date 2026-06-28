@@ -29,6 +29,12 @@ module.exports = {
         field: '12px',
         btn: '14px',
       },
+      height: {
+        screen: '100dvh',
+      },
+      minHeight: {
+        screen: '100dvh',
+      },
     },
   },
   plugins: [],
