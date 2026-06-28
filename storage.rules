@@ -1,0 +1,49 @@
+rules_version = '2';
+
+// Con Firebase Auth (Phone) ya en uso, request.auth.uid es una identidad
+// REAL verificada por Firebase — no un ID de documento adivinable como antes.
+// Cada usuario solo puede escribir en su propia carpeta ({usuarioId} debe
+// ser igual a su uid autenticado), y nadie puede leer directo desde el
+// cliente (la lectura para revisión del admin pasa por el Admin SDK,
+// vía URLs firmadas generadas en el backend).
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    match /kyc-selfie-ine/{usuarioId}/{archivo} {
+      allow read: if false;
+      allow write: if request.auth != null
+                   && request.auth.uid == usuarioId
+                   && request.resource.size < 10 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+
+    match /kyc-tarjeta-circulacion/{usuarioId}/{archivo} {
+      allow read: if false;
+      allow write: if request.auth != null
+                   && request.auth.uid == usuarioId
+                   && request.resource.size < 10 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+
+    match /kyc-video-perfil/{usuarioId}/{archivo} {
+      allow read: if false;
+      allow write: if request.auth != null
+                   && request.auth.uid == usuarioId
+                   && request.resource.size < 50 * 1024 * 1024
+                   && request.resource.contentType.matches('video/.*');
+    }
+
+    match /comprobantes-pago/{usuarioId}/{archivo} {
+      allow read: if false;
+      allow write: if request.auth != null
+                   && request.auth.uid == usuarioId
+                   && request.resource.size < 10 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,22 @@
+rules_version = '2';
+
+// Firestore: TODO el acceso de lectura/escritura desde el cliente está
+// bloqueado. Toda la lógica de negocio (registro, solicitudes, aprobación,
+// pagos) pasa por las API routes de Next.js, que usan el Admin SDK y por
+// lo tanto IGNORAN estas reglas por completo.
+//
+// Esto es intencional: centralizar la lógica de negocio en el backend (donde
+// puede validar checklist, anti-duplicados, transacciones de capital, etc.)
+// es más seguro que intentar replicar esa lógica como reglas de Firestore.
+//
+// Si en el futuro se agrega lectura directa desde el cliente (ej. el chofer
+// viendo su propio préstamo sin pasar por una API route), estas reglas
+// deben actualizarse explícitamente para ese caso — no antes.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

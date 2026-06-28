@@ -1,0 +1,25 @@
+# Dependencias
+/node_modules
+
+# Next.js
+/.next/
+/out/
+
+# Producción
+/build
+
+# Variables de entorno — NUNCA subir credenciales reales
+.env*.local
+.env
+
+# Logs
+npm-debug.log*
+*.log
+
+# Sistema
+.DS_Store
+*.pem
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
