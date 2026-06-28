@@ -3,6 +3,14 @@
     "init": "legion-pv",
     "arranca": "legion-pv"
   },
-  "targets": {},
+  "targets": {
+    "legion-pv": {
+      "storage": {
+        "rules": [
+          "legion-pv.appspot.com"
+        ]
+      }
+    }
+  },
   "etags": {}
 }
