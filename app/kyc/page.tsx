@@ -13,18 +13,15 @@ export default function KycPage() {
 
   const [selfieIne, setSelfieIne] = useState<File | null>(null);
   const [tarjetaCirculacion, setTarjetaCirculacion] = useState<File | null>(null);
-  const [video, setVideo] = useState<File | null>(null);
+  const [capturaPerfil, setCapturaPerfil] = useState<File | null>(null);
   const [subiendo, setSubiendo] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const inputSelfieRef = useRef<HTMLInputElement>(null);
   const inputTarjetaRef = useRef<HTMLInputElement>(null);
-  const inputVideoRef = useRef<HTMLInputElement>(null);
+  const inputCapturaPerfilRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Protege la pantalla: si no hay sesión de Firebase Auth activa, regresa
-    // al registro. usuarioId = auth.currentUser.uid, igual que las reglas
-    // de Storage esperan (request.auth.uid == usuarioId).
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (!user) {
         router.replace('/registro');
@@ -38,7 +35,7 @@ export default function KycPage() {
   async function handleContinuar() {
     if (!usuarioId) return;
 
-    if (!selfieIne || !tarjetaCirculacion || !video) {
+    if (!selfieIne || !tarjetaCirculacion || !capturaPerfil) {
       setError('Sube los tres archivos antes de continuar.');
       return;
     }
@@ -53,12 +50,21 @@ export default function KycPage() {
         'kyc-tarjeta-circulacion',
         usuarioId
       );
-      const videoPerfilUrl = await subirArchivo(video, 'kyc-video-perfil', usuarioId);
+      const capturaPerfilUrl = await subirArchivo(
+        capturaPerfil,
+        'kyc-captura-perfil',
+        usuarioId
+      );
 
       const res = await fetch('/api/usuarios/kyc', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ usuarioId, selfieIneUrl, tarjetaCirculacionUrl, videoPerfilUrl }),
+        body: JSON.stringify({
+          usuarioId,
+          selfieIneUrl,
+          tarjetaCirculacionUrl,
+          capturaPerfilUrl,
+        }),
       });
 
       if (!res.ok) {
@@ -67,7 +73,7 @@ export default function KycPage() {
         return;
       }
 
-      router.push(`/solicitar?videoPerfilUrl=${encodeURIComponent(videoPerfilUrl)}`);
+      router.push(`/solicitar?capturaPerfilUrl=${encodeURIComponent(capturaPerfilUrl)}`);
     } catch {
       setError('No se pudo subir tus archivos. Revisa tu conexión.');
     } finally {
@@ -122,30 +128,32 @@ export default function KycPage() {
       />
 
       <input
-        ref={inputVideoRef}
+        ref={inputCapturaPerfilRef}
         type="file"
-        accept="video/*"
-        capture="environment"
+        accept="image/*"
         className="hidden"
-        onChange={(e) => setVideo(e.target.files?.[0] || null)}
+        onChange={(e) => setCapturaPerfil(e.target.files?.[0] || null)}
       />
 
       <p className="text-[14.5px] font-bold text-textDim uppercase tracking-wider mb-2.5 mt-2">
         Tu actividad
       </p>
       <UploadBox
-        titulo="Video de 8 seg"
+        titulo="Captura de tu perfil"
         descripcion={
-          video ? video.name : 'Abre tu app de chofer y muestra que estás en línea'
+          capturaPerfil
+            ? capturaPerfil.name
+            : 'Abre tu app de chofer, ve a tu perfil, toma captura de pantalla'
         }
-        completado={!!video}
-        onClick={() => inputVideoRef.current?.click()}
+        completado={!!capturaPerfil}
+        onClick={() => inputCapturaPerfilRef.current?.click()}
       />
 
       <div className="bg-transparent border border-dashed border-border rounded-card p-[18px] mb-3.5">
         <p className="text-[14px] text-textDim leading-relaxed">
-          <strong className="text-text">Tip para el video:</strong> que se vea tu pantalla
-          completa, tu nombre en el perfil y que puedas aceptar viajes.
+          <strong className="text-text">Tip:</strong> que se vea tu nombre y tu estatus de
+          conectado/disponible. Para tomar captura: botón de encendido + bajar volumen al
+          mismo tiempo.
         </p>
       </div>
 

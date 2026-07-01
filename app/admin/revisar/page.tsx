@@ -168,16 +168,16 @@ function RevisarForm() {
         </div>
       </div>
 
-      {prestamo.videoPerfilUrl && (
-        <a
-          href={prestamo.videoPerfilUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block aspect-video bg-surface2 rounded-card mb-3.5 flex items-center justify-center text-xs text-textDim"
-        >
-          ▶ Ver video · perfil de chofer
-        </a>
-      )}
+	  {prestamo.capturaPerfilUrl && (
+	          <a
+	            href={prestamo.capturaPerfilUrl}
+	            target="_blank"
+	            rel="noopener noreferrer"
+	            className="block text-center text-[14px] text-amber mb-3.5 underline"
+	          >
+	            Ver captura: perfil de chofer
+	          </a>
+	        )}
 
       {usuario.selfieIneUrl && (
         <a

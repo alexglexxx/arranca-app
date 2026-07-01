@@ -1,9 +1,3 @@
-// POST /api/prestamos/solicitar
-// Crea una solicitud de préstamo en estado "pendiente_revision". Aplica las
-// validaciones automáticas del checklist (anti-duplicado, mora pendiente)
-// ANTES de que llegue al admin — así el admin solo revisa casos que ya
-// pasaron el filtro automático básico.
-
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
 import { Prestamo, CuestionarioSolicitud } from '@/types';
@@ -16,7 +10,7 @@ export async function POST(request: NextRequest) {
       cuentaDestino,
       ineNumero,
       nombreTitularCuenta,
-      videoPerfilUrl,
+      capturaPerfilUrl,
       cuestionario,
       aceptoCompromiso,
     } = await request.json();
@@ -49,7 +43,6 @@ export async function POST(request: NextRequest) {
 
     const usuario = usuarioSnap.data()!;
 
-    // Checklist B2: rechazo automático si ya tiene un préstamo en mora sin resolver
     if (usuario.enMora) {
       return NextResponse.json(
         { error: 'Tienes un préstamo anterior sin liquidar. No es posible solicitar otro.' },
@@ -57,11 +50,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Checklist B4 / A4 reforzado: no debe tener ya un préstamo activo o pendiente
-    // NOTA: esta query combina where + where('in') sobre campos distintos —
-    // Firestore pedirá crear un índice compuesto la primera vez que se ejecute.
-    // La consola de Firebase te da un link directo para crearlo con un clic
-    // cuando aparezca el error "The query requires an index" en los logs.
     const prestamosActivos = await adminDb
       .collection('prestamos')
       .where('usuarioId', '==', usuarioId)
@@ -76,8 +64,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Checklist A4: si es la primera vez con INE/cuenta, verificar que no estén
-    // ya usados por OTRO usuario (posible identidad duplicada)
     if (ineNumero) {
       const ineDuplicado = await adminDb
         .collection('usuarios')
@@ -108,9 +94,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Checklist A2: nombre del INE debe coincidir con titular de cuenta
-    // (validación blanda aquí — se marca para que el admin la confirme,
-    // no se rechaza automáticamente por riesgo de falsos positivos con acentos/abreviaturas)
     const posibleInconsistenciaNombre =
       nombreTitularCuenta &&
       usuario.nombre &&
@@ -138,7 +121,7 @@ export async function POST(request: NextRequest) {
       estado: 'pendiente_revision',
       comprobantePagoUrl: null,
       cuentaDestino,
-      videoPerfilUrl: videoPerfilUrl || null,
+      capturaPerfilUrl: capturaPerfilUrl || null,
       estatusAppChofer: null,
       revisadoPor: null,
       checklistCompleto: null,
@@ -152,7 +135,6 @@ export async function POST(request: NextRequest) {
 
     const docRef = await adminDb.collection('prestamos').add(nuevoPrestamo);
 
-    // Actualiza datos de identidad del usuario si es la primera vez que los manda
     const actualizacionUsuario: Record<string, unknown> = {};
     if (ineNumero && !usuario.ineNumero) actualizacionUsuario.ineNumero = ineNumero;
     if (cuentaDestino && !usuario.cuentaBancaria) actualizacionUsuario.cuentaBancaria = cuentaDestino;
@@ -173,9 +155,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Comparación simple de nombres — normaliza acentos/mayúsculas y compara por
-// palabras en común. No es perfecta a propósito: solo marca para revisión
-// humana, no rechaza automáticamente (ver checklist: el admin decide).
 function nombreSimilar(nombreA: string, nombreB: string): boolean {
   const normalizar = (s: string) =>
     s
@@ -189,12 +168,9 @@ function nombreSimilar(nombreA: string, nombreB: string): boolean {
   const palabrasB = normalizar(nombreB);
 
   const coincidencias = palabrasB.filter((p) => palabrasA.has(p)).length;
-  return coincidencias >= 2; // al menos nombre + apellido coinciden
+  return coincidencias >= 2;
 }
 
-// Valida que el cuestionario venga completo, incluyendo las 2 referencias
-// obligatorias (familiar + otro chofer) — sin esto, el permiso de contacto
-// que el usuario acepta no tendría a quién aplicarse.
 function validarCuestionario(
   cuestionario: CuestionarioSolicitud | undefined
 ): { valido: boolean; error?: string } {

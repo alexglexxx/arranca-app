@@ -33,7 +33,7 @@ function limpiarTelefonoContacto(telefono: string): string {
 function SolicitarForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const videoPerfilUrl = params.get('videoPerfilUrl') || '';
+  const capturaPerfilUrl = params.get('capturaPerfilUrl') || '';
   const [usuarioId, setUsuarioId] = useState<string | null>(null);
 
   const [cuentaDestino, setCuentaDestino] = useState('');
@@ -162,7 +162,7 @@ function SolicitarForm() {
           usuarioId,
           cuentaDestino: cuentaDestino.trim(),
           nombreTitularCuenta: nombreTitularCuenta.trim(),
-          videoPerfilUrl,
+          capturaPerfilUrl,
           cuestionario,
           aceptoCompromiso: true,
         }),

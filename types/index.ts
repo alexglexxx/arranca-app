@@ -81,7 +81,7 @@ export interface Prestamo {
   estado: EstadoPrestamo;
   comprobantePagoUrl: string | null;
   cuentaDestino: string;
-  videoPerfilUrl: string | null; // verificación de actividad (cada solicitud)
+  capturaPerfilUrl: string | null;
   estatusAppChofer: EstatusAppChofer | null;
   revisadoPor: string | null;
   checklistCompleto: ChecklistRevision | null;
