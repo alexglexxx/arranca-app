@@ -10,17 +10,15 @@
 // adminAuth.verifyIdToken().
 
 import { NextRequest, NextResponse } from 'next/server';
+import { errorResponse, requireUser } from '@/lib/auth';
 import { adminDb } from '@/lib/firebase-admin';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    const usuarioId = request.nextUrl.searchParams.get('usuarioId');
-
-    if (!usuarioId) {
-      return NextResponse.json({ error: 'usuarioId es obligatorio.' }, { status: 400 });
-    }
+    const actor = await requireUser(request);
+    const usuarioId = actor.uid;
 
     const usuarioSnap = await adminDb.collection('usuarios').doc(usuarioId).get();
 
@@ -39,7 +37,6 @@ export async function GET(request: NextRequest) {
       saldoRecompensas: usuario.saldoRecompensas || 0,
     });
   } catch (error) {
-    console.error('Error en /api/usuarios/me:', error);
-    return NextResponse.json({ error: 'Error interno.' }, { status: 500 });
+    return errorResponse(error, 'Error en /api/usuarios/me:');
   }
 }

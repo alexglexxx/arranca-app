@@ -2,7 +2,8 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, type User } from 'firebase/auth';
+import { fetchEstadoUsuario, getBearerHeaders } from '@/lib/auth-client';
 import { auth } from '@/lib/firebase';
 import { Button, Card, CardRow, Field } from '@/components/ui';
 import { REGLAS_PRESTAMO, calcularMontoConInteres, CuestionarioSolicitud } from '@/types';
@@ -34,7 +35,9 @@ function SolicitarForm() {
   const router = useRouter();
   const params = useSearchParams();
   const capturaPerfilUrl = params.get('capturaPerfilUrl') || '';
+  const [usuario, setUsuario] = useState<User | null>(null);
   const [usuarioId, setUsuarioId] = useState<string | null>(null);
+  const [verificandoEstado, setVerificandoEstado] = useState(true);
 
   const [cuentaDestino, setCuentaDestino] = useState('');
   const [nombreTitularCuenta, setNombreTitularCuenta] = useState('');
@@ -63,19 +66,52 @@ function SolicitarForm() {
   const fechaLimiteTexto = formatearFechaLimite();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    let activo = true;
+
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!activo) return;
+
       if (!user) {
         router.replace('/registro');
         return;
       }
+
+      setUsuario(user);
       setUsuarioId(user.uid);
+
+      try {
+        const estado = await fetchEstadoUsuario(user);
+        if (!activo) return;
+
+        if (estado.nextRoute !== '/solicitar') {
+          router.replace(estado.nextRoute);
+          return;
+        }
+
+        setVerificandoEstado(false);
+      } catch {
+        if (!activo) return;
+        setError('No se pudo validar tu estado. Intenta de nuevo.');
+        setVerificandoEstado(false);
+      }
     });
-    return unsubscribe;
+    return () => {
+      activo = false;
+      unsubscribe();
+    };
   }, [router]);
 
   useEffect(() => {
     setPuedeElegirContacto(soportaContactPicker());
   }, []);
+
+  if (verificandoEstado) {
+    return (
+      <div className="max-w-md mx-auto px-6 pt-8 pb-10 min-h-screen flex items-center justify-center">
+        <p className="text-textDim">Cargando...</p>
+      </div>
+    );
+  }
 
   async function handleElegirReferenciaFamiliar() {
     const contacto = await elegirContacto();
@@ -157,7 +193,9 @@ function SolicitarForm() {
     try {
       const res = await fetch('/api/prestamos/solicitar', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await getBearerHeaders(usuario, {
+          'Content-Type': 'application/json',
+        }),
         body: JSON.stringify({
           usuarioId,
           cuentaDestino: cuentaDestino.trim(),

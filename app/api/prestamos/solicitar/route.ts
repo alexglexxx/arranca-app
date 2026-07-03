@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { assertSameUser, errorResponse, requireUser } from '@/lib/auth';
 import { adminDb } from '@/lib/firebase-admin';
 import { Prestamo, CuestionarioSolicitud } from '@/types';
 import { REGLAS_PRESTAMO, calcularMontoConInteres } from '@/types';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
+    const actor = await requireUser(request);
     const {
       usuarioId,
       cuentaDestino,
@@ -14,6 +18,8 @@ export async function POST(request: NextRequest) {
       cuestionario,
       aceptoCompromiso,
     } = await request.json();
+
+    assertSameUser(actor, usuarioId);
 
     if (!usuarioId || !cuentaDestino) {
       return NextResponse.json(
@@ -147,11 +153,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ prestamoId: docRef.id, estado: 'pendiente_revision' });
   } catch (error) {
-    console.error('Error en /api/prestamos/solicitar:', error);
-    return NextResponse.json(
-      { error: 'Error interno al procesar la solicitud.' },
-      { status: 500 }
-    );
+    return errorResponse(error, 'Error en /api/prestamos/solicitar:');
   }
 }
 

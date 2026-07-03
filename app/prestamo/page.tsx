@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, type User } from 'firebase/auth';
+import { fetchEstadoUsuario, getBearerHeaders } from '@/lib/auth-client';
 import { auth } from '@/lib/firebase';
 import { BrandHeader, Button, Card, CardRow, Pill, UploadBox } from '@/components/ui';
 import Gauge from '@/components/Gauge';
@@ -17,6 +18,8 @@ function PrestamoContent() {
   const prestamoId = params.get('prestamoId') || '';
 
   const [prestamo, setPrestamo] = useState<Prestamo | null>(null);
+  const [usuario, setUsuario] = useState<User | null>(null);
+  const [authCargada, setAuthCargada] = useState(false);
   const [usuarioIdAutenticado, setUsuarioIdAutenticado] = useState<string | null>(null);
   const [comprobante, setComprobante] = useState<File | null>(null);
   const [subiendoComprobante, setSubiendoComprobante] = useState(false);
@@ -25,17 +28,47 @@ function PrestamoContent() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUsuario(user);
       setUsuarioIdAutenticado(user?.uid || null);
+      setAuthCargada(true);
     });
     return unsubscribe;
   }, []);
 
   useEffect(() => {
-    if (!prestamoId) return;
+    if (!usuario || prestamoId) return;
+
+    let activo = true;
+
+    async function resolverRuta() {
+      try {
+        const estado = await fetchEstadoUsuario(usuario);
+        if (!activo) return;
+
+        if (estado.nextRoute !== '/prestamo') {
+          router.replace(estado.nextRoute);
+        }
+      } catch {
+        if (!activo) return;
+        setError('No se pudo consultar el estado de tu préstamo.');
+      }
+    }
+
+    resolverRuta();
+
+    return () => {
+      activo = false;
+    };
+  }, [prestamoId, router, usuario]);
+
+  useEffect(() => {
+    if (!prestamoId || !usuario) return;
 
     async function cargar() {
       try {
-        const res = await fetch(`/api/prestamos/${prestamoId}`);
+        const res = await fetch(`/api/prestamos/${prestamoId}`, {
+          headers: await getBearerHeaders(usuario),
+        });
         if (res.ok) {
           setPrestamo(await res.json());
         }
@@ -47,7 +80,7 @@ function PrestamoContent() {
     cargar();
     const interval = setInterval(cargar, INTERVALO_POLLING_MS);
     return () => clearInterval(interval);
-  }, [prestamoId]);
+  }, [prestamoId, usuario]);
 
   async function handleSubirComprobante() {
     if (!comprobante || !prestamo) return;
@@ -69,7 +102,9 @@ function PrestamoContent() {
 
       const res = await fetch('/api/prestamos/pagar', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await getBearerHeaders(usuario, {
+          'Content-Type': 'application/json',
+        }),
         body: JSON.stringify({
           accion: 'subir_comprobante',
           prestamoId,
@@ -83,7 +118,9 @@ function PrestamoContent() {
         return;
       }
 
-      const actualizado = await fetch(`/api/prestamos/${prestamoId}`);
+      const actualizado = await fetch(`/api/prestamos/${prestamoId}`, {
+        headers: await getBearerHeaders(usuario),
+      });
       setPrestamo(await actualizado.json());
     } catch {
       setError('No se pudo subir tu comprobante. Intenta de nuevo.');
@@ -93,6 +130,17 @@ function PrestamoContent() {
   }
 
   if (!prestamo) {
+    if (authCargada && !usuario) {
+      return (
+        <div className="max-w-md mx-auto px-6 pt-8 pb-10 min-h-screen flex flex-col items-center justify-center text-center">
+          <p className="text-textDim text-[14.5px] leading-relaxed mb-4">
+            Para ver el estado de tu préstamo, vuelve a entrar con tu número de teléfono.
+          </p>
+          <Button onClick={() => router.push('/ingresar')}>Entrar de nuevo</Button>
+        </div>
+      );
+    }
+
     return (
       <div className="max-w-md mx-auto px-6 pt-8 min-h-screen flex items-center justify-center">
         <p className="text-textDim">Cargando...</p>

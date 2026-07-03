@@ -9,10 +9,14 @@
 // "cuánto ya le transferí".
 
 import { NextRequest, NextResponse } from 'next/server';
+import { errorResponse, requireAdmin } from '@/lib/auth';
 import { adminDb } from '@/lib/firebase-admin';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
+    await requireAdmin(request);
     const { usuarioId } = await request.json();
 
     if (!usuarioId) {
@@ -44,7 +48,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ pagado: true, monto: saldoPagado });
   } catch (error) {
-    console.error('Error en /api/admin/referidos/pagar:', error);
-    return NextResponse.json({ error: 'Error interno.' }, { status: 500 });
+    return errorResponse(error, 'Error en /api/admin/referidos/pagar:');
   }
 }

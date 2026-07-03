@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ConfirmationResult } from 'firebase/auth';
+import { getBearerHeaders } from '@/lib/auth-client';
 import { BrandHeader, Button } from '@/components/ui';
 
 const DURACION_REENVIO_SEG = 45;
@@ -64,6 +65,9 @@ export default function VerificarPage() {
 
       const credencial = await confirmationResult.confirm(codigo);
       const firebaseUid = credencial.user.uid;
+      const headers = await getBearerHeaders(credencial.user, {
+        'Content-Type': 'application/json',
+      });
 
       const nombre = sessionStorage.getItem('registro_nombre') || '';
       const correo = sessionStorage.getItem('registro_correo') || '';
@@ -71,7 +75,7 @@ export default function VerificarPage() {
 
       const res = await fetch('/api/usuarios/sincronizar', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ firebaseUid, nombre, correo, telefono, codigoReferido }),
       });
 
@@ -82,7 +86,7 @@ export default function VerificarPage() {
         return;
       }
 
-      router.push(`/kyc?usuarioId=${data.usuarioId}`);
+      router.push(data.nextRoute || `/kyc?usuarioId=${data.usuarioId}`);
     } catch (err) {
       console.error(err);
       setError('El código no es correcto o expiró.');
@@ -94,7 +98,8 @@ export default function VerificarPage() {
   }
 
   async function reenviarCodigo() {
-    router.push('/registro');
+    const modoAuth = sessionStorage.getItem('modo_auth');
+    router.push(modoAuth === 'login' ? '/ingresar' : '/registro');
   }
 
   return (

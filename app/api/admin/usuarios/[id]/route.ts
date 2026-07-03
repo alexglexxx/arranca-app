@@ -3,13 +3,17 @@
 // revisión del admin para mostrar selfie+INE, historial, y datos de contacto.
 
 import { NextRequest, NextResponse } from 'next/server';
+import { errorResponse, requireAdmin } from '@/lib/auth';
 import { adminDb } from '@/lib/firebase-admin';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    await requireAdmin(request);
     const usuarioSnap = await adminDb.collection('usuarios').doc(params.id).get();
 
     if (!usuarioSnap.exists) {
@@ -18,7 +22,6 @@ export async function GET(
 
     return NextResponse.json({ id: usuarioSnap.id, ...usuarioSnap.data() });
   } catch (error) {
-    console.error('Error en /api/admin/usuarios/[id]:', error);
-    return NextResponse.json({ error: 'Error interno.' }, { status: 500 });
+    return errorResponse(error, 'Error en /api/admin/usuarios/[id]:');
   }
 }

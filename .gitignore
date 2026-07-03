@@ -11,6 +11,7 @@
 # Variables de entorno — NUNCA subir credenciales reales
 .env*.local
 .env
+FIREBASE_SERVICE_ACCOUNT_KEY
 
 # Logs
 npm-debug.log*

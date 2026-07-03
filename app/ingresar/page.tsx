@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   RecaptchaVerifier,
   signInWithPhoneNumber,
@@ -14,28 +14,22 @@ import { BrandHeader, Button, Field } from '@/components/ui';
 
 function normalizarTelefono(telefono: string): string {
   const limpio = telefono.replace(/[\s\-()]/g, '');
+
   if (limpio.startsWith('+')) return limpio;
   if (limpio.startsWith('52')) return `+${limpio}`;
+
   return `+52${limpio}`;
 }
 
-function RegistroForm() {
+export default function IngresarPage() {
   const router = useRouter();
-  const params = useSearchParams();
-  const [nombre, setNombre] = useState('');
+
   const [telefono, setTelefono] = useState('');
-  const [correo, setCorreo] = useState('');
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [verificandoSesion, setVerificandoSesion] = useState(true);
-  const recaptchaRef = useRef<RecaptchaVerifier | null>(null);
 
-  useEffect(() => {
-    const ref = params.get('ref');
-    if (ref) {
-      sessionStorage.setItem('codigo_referido', ref.toUpperCase().trim());
-    }
-  }, [params]);
+  const recaptchaRef = useRef<RecaptchaVerifier | null>(null);
 
   useEffect(() => {
     let activo = true;
@@ -82,6 +76,7 @@ function RegistroForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
     setError(null);
     setCargando(true);
 
@@ -89,27 +84,26 @@ function RegistroForm() {
       const telefonoNormalizado = normalizarTelefono(telefono);
 
       if (!recaptchaRef.current) {
-        setError('No se pudo inicializar la verificación. Recarga la página.');
+        setError('No se pudo inicializar la verificación.');
         return;
       }
 
-      const resultadoConfirmacion: ConfirmationResult = await signInWithPhoneNumber(
-        auth,
-        telefonoNormalizado,
-        recaptchaRef.current
-      );
+      const confirmationResult: ConfirmationResult =
+        await signInWithPhoneNumber(
+          auth,
+          telefonoNormalizado,
+          recaptchaRef.current
+        );
 
-      (window as unknown as { confirmationResult?: ConfirmationResult }).confirmationResult =
-        resultadoConfirmacion;
+      (window as any).confirmationResult = confirmationResult;
 
-      sessionStorage.setItem('registro_nombre', nombre.trim());
-      sessionStorage.setItem('registro_correo', correo.trim());
       sessionStorage.setItem('registro_telefono', telefonoNormalizado);
-      sessionStorage.setItem('modo_auth', 'registro');
+      sessionStorage.setItem('modo_auth', 'login');
+
       router.push('/verificar');
     } catch (err) {
       console.error(err);
-      setError('No se pudo enviar el código. Revisa tu número e intenta de nuevo.');
+      setError('No se pudo enviar el código SMS.');
     } finally {
       setCargando(false);
     }
@@ -117,25 +111,21 @@ function RegistroForm() {
 
   return (
     <div className="max-w-md mx-auto px-6 pt-8 pb-10 min-h-screen flex flex-col">
+
       <BrandHeader />
 
-      <h1 className="font-display text-[28px] font-semibold leading-[1.15] -tracking-wide mb-2">
-        Gasolina para
+      <h1 className="font-display text-[28px] font-semibold leading-[1.15] mb-2">
+        Bienvenido
         <br />
-        seguir trabajando
+        de nuevo
       </h1>
+
       <p className="text-textDim text-[14.5px] leading-relaxed mb-7">
-        $200 hoy, sin vueltas. Pagas cuando ya facturaste el día.
+        Escribe el número con el que te registraste.
       </p>
 
       <form onSubmit={handleSubmit} className="flex flex-col flex-1">
-        <Field
-          label="Nombre completo"
-          placeholder="Como aparece en tu INE"
-          value={nombre}
-          onChange={(e) => setNombre(e.target.value)}
-          required
-        />
+
         <Field
           label="WhatsApp / Celular"
           placeholder="55 1234 5678"
@@ -143,17 +133,9 @@ function RegistroForm() {
           onChange={(e) => setTelefono(e.target.value)}
           required
         />
-        <Field
-          label="Correo"
-          type="email"
-          placeholder="tucorreo@ejemplo.com"
-          value={correo}
-          onChange={(e) => setCorreo(e.target.value)}
-          required
-        />
 
         {error && (
-          <p className="text-danger text-sm mb-4" role="alert">
+          <p className="text-danger text-sm mb-4">
             {error}
           </p>
         )}
@@ -161,19 +143,16 @@ function RegistroForm() {
         <div id="recaptcha-container" />
 
         <div className="mt-auto pt-4">
-          <Button type="submit" disabled={cargando}>
-            {cargando ? 'Enviando código...' : 'Enviar código por SMS'}
+          <Button
+            type="submit"
+            disabled={cargando}
+          >
+            {cargando ? 'Enviando código...' : 'Enviar código'}
           </Button>
         </div>
-      </form>
-    </div>
-  );
-}
 
-export default function RegistroPage() {
-  return (
-    <Suspense fallback={null}>
-      <RegistroForm />
-    </Suspense>
+      </form>
+
+    </div>
   );
 }

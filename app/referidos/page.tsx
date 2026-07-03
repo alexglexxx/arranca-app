@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
+import { getBearerHeaders } from '@/lib/auth-client';
 import { auth } from '@/lib/firebase';
 import { BrandHeader, Button, Card, CardRow } from '@/components/ui';
 import { REFERIDOS } from '@/types';
@@ -27,7 +28,9 @@ export default function ReferidosPage() {
       }
 
       try {
-        const res = await fetch(`/api/usuarios/me?usuarioId=${user.uid}`);
+        const res = await fetch('/api/usuarios/me', {
+          headers: await getBearerHeaders(user),
+        });
         if (res.ok) {
           setDatos(await res.json());
         }

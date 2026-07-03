@@ -7,8 +7,17 @@
 // campo "accion" en el body.
 
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  assertAdminOrOwner,
+  createHttpError,
+  errorResponse,
+  requireAdmin,
+  requireUserOrAdmin,
+} from '@/lib/auth';
 import { adminDb } from '@/lib/firebase-admin';
 import { REFERIDOS } from '@/types';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,11 +25,17 @@ export async function POST(request: NextRequest) {
     const { accion, prestamoId } = body;
 
     if (accion === 'subir_comprobante') {
-      return await subirComprobante(prestamoId, body.comprobantePagoUrl);
+      const actor = await requireUserOrAdmin(request);
+      return await subirComprobante(actor, prestamoId, body.comprobantePagoUrl);
     }
 
     if (accion === 'confirmar_pago') {
-      return await confirmarPago(prestamoId, body.montoFinalPagado, body.confirmadoPor);
+      const adminActor = await requireAdmin(request);
+      return await confirmarPago(
+        prestamoId,
+        body.montoFinalPagado,
+        body.confirmadoPor || adminActor.username
+      );
     }
 
     return NextResponse.json(
@@ -28,12 +43,15 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   } catch (error) {
-    console.error('Error en /api/prestamos/pagar:', error);
-    return NextResponse.json({ error: 'Error interno.' }, { status: 500 });
+    return errorResponse(error, 'Error en /api/prestamos/pagar:');
   }
 }
 
-async function subirComprobante(prestamoId: string, comprobantePagoUrl: string) {
+async function subirComprobante(
+  actor: Awaited<ReturnType<typeof requireUserOrAdmin>>,
+  prestamoId: string,
+  comprobantePagoUrl: string
+) {
   if (!prestamoId || !comprobantePagoUrl) {
     return NextResponse.json(
       { error: 'prestamoId y comprobantePagoUrl son obligatorios.' },
@@ -48,7 +66,10 @@ async function subirComprobante(prestamoId: string, comprobantePagoUrl: string) 
     return NextResponse.json({ error: 'Préstamo no encontrado.' }, { status: 404 });
   }
 
-  if (prestamoSnap.data()!.estado !== 'activo') {
+  const prestamo = prestamoSnap.data()!;
+  assertAdminOrOwner(actor, prestamo.usuarioId);
+
+  if (prestamo.estado !== 'activo') {
     return NextResponse.json(
       { error: 'Solo se puede subir comprobante de préstamos activos.' },
       { status: 400 }
@@ -77,21 +98,27 @@ async function confirmarPago(
     const prestamoSnap = await transaction.get(prestamoRef);
 
     if (!prestamoSnap.exists) {
-      throw new Error('Préstamo no encontrado.');
+      throw createHttpError(404, 'Préstamo no encontrado.');
     }
 
     const prestamo = prestamoSnap.data()!;
 
     if (prestamo.estado !== 'activo') {
-      throw new Error('Solo se puede confirmar pago de préstamos activos.');
+      throw createHttpError(400, 'Solo se puede confirmar pago de préstamos activos.');
     }
 
     const capitalRef = adminDb.collection('configuracion').doc('capital');
     const capitalSnap = await transaction.get(capitalRef);
+    if (!capitalSnap.exists) {
+      throw createHttpError(400, 'No se ha configurado el capital del sistema.');
+    }
     const capital = capitalSnap.data()!;
 
     const usuarioRef = adminDb.collection('usuarios').doc(prestamo.usuarioId);
     const usuarioSnap = await transaction.get(usuarioRef);
+    if (!usuarioSnap.exists) {
+      throw createHttpError(404, 'Usuario no encontrado.');
+    }
     const usuario = usuarioSnap.data()!;
 
     // Programa de referidos: la recompensa se otorga SOLO cuando este es el
@@ -101,6 +128,7 @@ async function confirmarPago(
     const esPrimerPrestamoCompletado = (usuario.prestamosCompletados || 0) === 0;
     const tieneReferidor = !!usuario.referidoPor;
     let referidorId: string | null = null;
+    let descuentoReferido = 0;
 
     if (esPrimerPrestamoCompletado && tieneReferidor) {
       const referidorRef = adminDb.collection('usuarios').doc(usuario.referidoPor);
@@ -116,13 +144,11 @@ async function confirmarPago(
           referidosExitosos: (referidor.referidosExitosos || 0) + 1,
           saldoRecompensas: (referidor.saldoRecompensas || 0) + REFERIDOS.RECOMPENSA_MXN,
         });
+        descuentoReferido = REFERIDOS.RECOMPENSA_MXN;
 
         // La recompensa sale del capital real — es dinero que efectivamente
         // vas a transferir al referidor, no solo margen no cobrado. Por eso
         // se descuenta de capitalDisponible, igual que un préstamo nuevo.
-        transaction.update(capitalRef, {
-          capitalDisponible: capital.capitalDisponible - REFERIDOS.RECOMPENSA_MXN,
-        });
       }
     }
 
@@ -138,7 +164,7 @@ async function confirmarPago(
     // permite atender más usuarios con el mismo capital)
     transaction.update(capitalRef, {
       capitalPrestado: capital.capitalPrestado - prestamo.monto,
-      capitalDisponible: capital.capitalDisponible + prestamo.monto,
+      capitalDisponible: capital.capitalDisponible + prestamo.monto - descuentoReferido,
     });
 
     transaction.update(usuarioRef, {

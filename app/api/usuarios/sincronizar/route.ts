@@ -15,8 +15,12 @@
 // (ver /api/prestamos/pagar).
 
 import { NextRequest, NextResponse } from 'next/server';
+import { assertSameUser, errorResponse, requireUser } from '@/lib/auth';
 import { adminDb } from '@/lib/firebase-admin';
+import { resolveUserRouteState } from '@/lib/user-state';
 import { Usuario } from '@/types';
+
+export const dynamic = 'force-dynamic';
 
 function generarCodigoReferido(nombre: string): string {
   const primerNombre = (nombre.split(' ')[0] || 'CHOFER').toUpperCase().replace(/[^A-Z]/g, '');
@@ -26,7 +30,10 @@ function generarCodigoReferido(nombre: string): string {
 
 export async function POST(request: NextRequest) {
   try {
+    const actor = await requireUser(request);
     const { firebaseUid, nombre, correo, telefono, codigoReferido } = await request.json();
+
+    assertSameUser(actor, firebaseUid);
 
     if (!firebaseUid || !telefono) {
       return NextResponse.json(
@@ -45,7 +52,27 @@ export async function POST(request: NextRequest) {
         nombre: nombre || usuarioSnap.data()!.nombre,
         correo: correo || usuarioSnap.data()!.correo,
       });
-      return NextResponse.json({ usuarioId: firebaseUid, esNuevo: false });
+      return NextResponse.json(await resolveUserRouteState(firebaseUid));
+    }
+
+    const usuarioPorTelefonoSnap = await adminDb
+      .collection('usuarios')
+      .where('telefono', '==', telefono)
+      .limit(1)
+      .get();
+
+    if (!usuarioPorTelefonoSnap.empty) {
+      const usuarioExistente = usuarioPorTelefonoSnap.docs[0];
+
+      if (usuarioExistente.id !== firebaseUid) {
+        return NextResponse.json(
+          {
+            error:
+              'Ya existe una cuenta con este teléfono asociada a otro identificador. Requiere revisión manual antes de continuar.',
+          },
+          { status: 409 }
+        );
+      }
     }
 
     // Si llegó con un código de referido, buscamos a quién pertenece.
@@ -93,12 +120,8 @@ export async function POST(request: NextRequest) {
 
     await usuarioRef.set(nuevoUsuario);
 
-    return NextResponse.json({ usuarioId: firebaseUid, esNuevo: true });
+    return NextResponse.json(await resolveUserRouteState(firebaseUid));
   } catch (error) {
-    console.error('Error en /api/usuarios/sincronizar:', error);
-    return NextResponse.json(
-      { error: 'Error interno al sincronizar el usuario.' },
-      { status: 500 }
-    );
+    return errorResponse(error, 'Error en /api/usuarios/sincronizar:');
   }
 }

@@ -4,6 +4,15 @@
 
 export type EstadoVerificacionUsuario = 'pendiente' | 'verificado' | 'rechazado';
 
+export type EstadoUsuarioNavegable =
+  | 'nuevo'
+  | 'perfil_incompleto'
+  | 'kyc_pendiente'
+  | 'solicitud_en_revision'
+  | 'aprobado'
+  | 'prestamo_activo'
+  | 'rechazado';
+
 export type EstadoPrestamo =
   | 'pendiente_revision'
   | 'aprobado'
@@ -96,6 +105,19 @@ export interface ConfiguracionCapital {
   capitalPrestado: number;
   capitalDisponible: number;
   topeMaximoPorPrestamo: number;
+}
+
+export interface EstadoUsuarioRouteInfo {
+  ok: true;
+  usuarioId: string;
+  usuario: {
+    estado: EstadoUsuarioNavegable;
+  };
+  estadoUsuario: EstadoVerificacionUsuario | 'sin_usuario';
+  estadoSolicitud: EstadoPrestamo | 'sin_solicitud';
+  estadoPrestamo: EstadoPrestamo | 'sin_prestamo';
+  prestamoId: string | null;
+  nextRoute: string;
 }
 
 // Reglas de negocio centrales — única fuente de verdad para las tasas.

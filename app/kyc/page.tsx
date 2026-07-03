@@ -1,15 +1,20 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { onAuthStateChanged } from 'firebase/auth';
+import { Suspense, useState, useRef, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { onAuthStateChanged, type User } from 'firebase/auth';
+import { fetchEstadoUsuario, getBearerHeaders } from '@/lib/auth-client';
 import { auth } from '@/lib/firebase';
 import { Button, UploadBox } from '@/components/ui';
 import { subirArchivo } from '@/lib/storage';
 
-export default function KycPage() {
+function KycForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const usuarioIdParam = searchParams.get('usuarioId');
+  const [usuario, setUsuario] = useState<User | null>(null);
   const [usuarioId, setUsuarioId] = useState<string | null>(null);
+  const [verificandoEstado, setVerificandoEstado] = useState(true);
 
   const [selfieIne, setSelfieIne] = useState<File | null>(null);
   const [tarjetaCirculacion, setTarjetaCirculacion] = useState<File | null>(null);
@@ -22,15 +27,54 @@ export default function KycPage() {
   const inputCapturaPerfilRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    let activo = true;
+
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!activo) return;
+
       if (!user) {
         router.replace('/registro');
         return;
       }
+
+      if (usuarioIdParam && usuarioIdParam !== user.uid) {
+        router.replace('/');
+        return;
+      }
+
+      setUsuario(user);
       setUsuarioId(user.uid);
+
+      try {
+        const estado = await fetchEstadoUsuario(user);
+        if (!activo) return;
+
+        if (!['nuevo', 'perfil_incompleto', 'kyc_pendiente'].includes(estado.usuario.estado)) {
+          router.replace(estado.nextRoute);
+          return;
+        }
+
+        setVerificandoEstado(false);
+      } catch {
+        if (!activo) return;
+        setError('No se pudo validar tu estado. Intenta de nuevo.');
+        setVerificandoEstado(false);
+      }
     });
-    return unsubscribe;
-  }, [router]);
+
+    return () => {
+      activo = false;
+      unsubscribe();
+    };
+  }, [router, usuarioIdParam]);
+
+  if (verificandoEstado) {
+    return (
+      <div className="max-w-md mx-auto px-6 pt-8 pb-10 min-h-screen flex items-center justify-center">
+        <p className="text-textDim">Cargando...</p>
+      </div>
+    );
+  }
 
   async function handleContinuar() {
     if (!usuarioId) return;
@@ -58,7 +102,9 @@ export default function KycPage() {
 
       const res = await fetch('/api/usuarios/kyc', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await getBearerHeaders(usuario, {
+          'Content-Type': 'application/json',
+        }),
         body: JSON.stringify({
           usuarioId,
           selfieIneUrl,
@@ -169,5 +215,13 @@ export default function KycPage() {
         </Button>
       </div>
     </div>
+  );
+}
+
+export default function KycPage() {
+  return (
+    <Suspense fallback={null}>
+      <KycForm />
+    </Suspense>
   );
 }

@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { assertSameUser, errorResponse, requireUser } from '@/lib/auth';
 import { adminDb } from '@/lib/firebase-admin';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
+    const actor = await requireUser(request);
     const { usuarioId, selfieIneUrl, tarjetaCirculacionUrl, capturaPerfilUrl } = await request.json();
+
+    assertSameUser(actor, usuarioId);
 
     if (!usuarioId || !selfieIneUrl || !tarjetaCirculacionUrl || !capturaPerfilUrl) {
       return NextResponse.json(
@@ -22,7 +28,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ guardado: true, capturaPerfilUrl });
   } catch (error) {
-    console.error('Error en /api/usuarios/kyc:', error);
-    return NextResponse.json({ error: 'Error interno al guardar verificación.' }, { status: 500 });
+    return errorResponse(error, 'Error en /api/usuarios/kyc:');
   }
 }

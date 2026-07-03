@@ -3,10 +3,14 @@
 // a comprometer (eso solo pasa en /aprobar).
 
 import { NextRequest, NextResponse } from 'next/server';
+import { errorResponse, requireAdmin } from '@/lib/auth';
 import { adminDb } from '@/lib/firebase-admin';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
+    const adminActor = await requireAdmin(request);
     const { prestamoId, motivoRechazo, revisadoPor } = await request.json();
 
     if (!prestamoId) {
@@ -29,13 +33,12 @@ export async function POST(request: NextRequest) {
 
     await prestamoRef.update({
       estado: 'rechazado',
-      revisadoPor: revisadoPor || 'admin',
+      revisadoPor: revisadoPor || adminActor.username,
       notasAdmin: motivoRechazo || 'Rechazado sin motivo especificado.',
     });
 
     return NextResponse.json({ rechazado: true });
   } catch (error) {
-    console.error('Error en /api/prestamos/rechazar:', error);
-    return NextResponse.json({ error: 'Error interno al rechazar.' }, { status: 500 });
+    return errorResponse(error, 'Error en /api/prestamos/rechazar:');
   }
 }

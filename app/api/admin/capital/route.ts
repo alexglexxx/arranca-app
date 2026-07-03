@@ -4,10 +4,14 @@
 // ese campo solo lo modifican las transacciones de /aprobar y /pagar.
 
 import { NextRequest, NextResponse } from 'next/server';
+import { errorResponse, requireAdmin } from '@/lib/auth';
 import { adminDb } from '@/lib/firebase-admin';
 
-export async function GET() {
+export const dynamic = 'force-dynamic';
+
+export async function GET(request: NextRequest) {
   try {
+    await requireAdmin(request);
     const capitalSnap = await adminDb.collection('configuracion').doc('capital').get();
 
     if (!capitalSnap.exists) {
@@ -19,13 +23,13 @@ export async function GET() {
 
     return NextResponse.json(capitalSnap.data());
   } catch (error) {
-    console.error('Error en GET /api/admin/capital:', error);
-    return NextResponse.json({ error: 'Error interno.' }, { status: 500 });
+    return errorResponse(error, 'Error en GET /api/admin/capital:');
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    await requireAdmin(request);
     const { capitalTotal, topeMaximoPorPrestamo } = await request.json();
 
     const capitalRef = adminDb.collection('configuracion').doc('capital');
@@ -52,7 +56,6 @@ export async function POST(request: NextRequest) {
     const actualizado = await capitalRef.get();
     return NextResponse.json(actualizado.data());
   } catch (error) {
-    console.error('Error en POST /api/admin/capital:', error);
-    return NextResponse.json({ error: 'Error interno.' }, { status: 500 });
+    return errorResponse(error, 'Error en POST /api/admin/capital:');
   }
 }

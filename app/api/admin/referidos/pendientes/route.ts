@@ -3,10 +3,15 @@
 // a quién le debe transferir, sin tener que revisar uno por uno.
 
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { errorResponse, requireAdmin } from '@/lib/auth';
 import { adminDb } from '@/lib/firebase-admin';
 
-export async function GET() {
+export const dynamic = 'force-dynamic';
+
+export async function GET(request: NextRequest) {
   try {
+    await requireAdmin(request);
     const snapshot = await adminDb
       .collection('usuarios')
       .where('saldoRecompensas', '>', 0)
@@ -22,7 +27,6 @@ export async function GET() {
 
     return NextResponse.json({ pendientes });
   } catch (error) {
-    console.error('Error en /api/admin/referidos/pendientes:', error);
-    return NextResponse.json({ error: 'Error interno.' }, { status: 500 });
+    return errorResponse(error, 'Error en /api/admin/referidos/pendientes:');
   }
 }

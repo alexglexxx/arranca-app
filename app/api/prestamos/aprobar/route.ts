@@ -6,13 +6,16 @@
 // más capital del que realmente tienes).
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createHttpError, errorResponse, requireAdmin } from '@/lib/auth';
 import { adminDb } from '@/lib/firebase-admin';
 import { ChecklistRevision, REGLAS_PRESTAMO } from '@/types';
 
 const PLAZO_MAXIMO_MS = REGLAS_PRESTAMO.DIAS_PLAZO_MAXIMO * 24 * 60 * 60 * 1000;
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
+    const adminActor = await requireAdmin(request);
     const { prestamoId, checklistCompleto, revisadoPor } = await request.json();
 
     if (!prestamoId || !checklistCompleto) {
@@ -41,26 +44,30 @@ export async function POST(request: NextRequest) {
       const prestamoSnap = await transaction.get(prestamoRef);
 
       if (!prestamoSnap.exists) {
-        throw new Error('Préstamo no encontrado.');
+        throw createHttpError(404, 'Préstamo no encontrado.');
       }
 
       const prestamo = prestamoSnap.data()!;
 
       if (prestamo.estado !== 'pendiente_revision') {
-        throw new Error(`El préstamo ya no está pendiente de revisión (estado actual: ${prestamo.estado}).`);
+        throw createHttpError(
+          400,
+          `El préstamo ya no está pendiente de revisión (estado actual: ${prestamo.estado}).`
+        );
       }
 
       const capitalRef = adminDb.collection('configuracion').doc('capital');
       const capitalSnap = await transaction.get(capitalRef);
 
       if (!capitalSnap.exists) {
-        throw new Error('No se ha configurado el capital del sistema.');
+        throw createHttpError(400, 'No se ha configurado el capital del sistema.');
       }
 
       const capital = capitalSnap.data()!;
 
       if (capital.capitalDisponible < prestamo.monto) {
-        throw new Error(
+        throw createHttpError(
+          400,
           `Capital insuficiente. Disponible: $${capital.capitalDisponible}, requerido: $${prestamo.monto}.`
         );
       }
@@ -72,7 +79,7 @@ export async function POST(request: NextRequest) {
         estado: 'activo',
         fechaAprobacion: ahora,
         fechaLimite,
-        revisadoPor: revisadoPor || 'admin',
+        revisadoPor: revisadoPor || adminActor.username,
         checklistCompleto: checklist,
       });
 
@@ -86,8 +93,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ aprobado: true, ...resultado });
   } catch (error) {
-    console.error('Error en /api/prestamos/aprobar:', error);
-    const mensaje = error instanceof Error ? error.message : 'Error interno al aprobar.';
-    return NextResponse.json({ error: mensaje }, { status: 400 });
+    return errorResponse(error, 'Error en /api/prestamos/aprobar:');
   }
 }
