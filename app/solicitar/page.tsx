@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { fetchEstadoUsuario, getBearerHeaders } from '@/lib/auth-client';
 import { auth } from '@/lib/firebase';
+import { DevResetSolicitudButton } from '@/components/DevResetSolicitudButton';
 import { Button, Card, CardRow, Field } from '@/components/ui';
 import { REGLAS_PRESTAMO, calcularMontoConInteres, CuestionarioSolicitud } from '@/types';
 import { soportaContactPicker, elegirContacto } from '@/lib/contactos';
@@ -434,6 +435,7 @@ function SolicitarForm() {
       <Button onClick={handleSolicitar} disabled={cargando}>
         {cargando ? 'Enviando...' : `Solicitar $${MONTO}`}
       </Button>
+      <DevResetSolicitudButton />
     </div>
   );
 }

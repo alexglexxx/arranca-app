@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { fetchEstadoUsuario, getBearerHeaders } from '@/lib/auth-client';
 import { auth } from '@/lib/firebase';
+import { DevResetSolicitudButton } from '@/components/DevResetSolicitudButton';
 import { BrandHeader, Button, Card, CardRow, Pill, UploadBox } from '@/components/ui';
 import Gauge from '@/components/Gauge';
 import { Prestamo } from '@/types';
@@ -160,6 +161,7 @@ function PrestamoContent() {
         <p className="text-textDim text-[14.5px] leading-relaxed">
           Normalmente tardamos menos de 15 minutos. Te avisamos por WhatsApp.
         </p>
+        <DevResetSolicitudButton />
       </div>
     );
   }
@@ -171,6 +173,7 @@ function PrestamoContent() {
         <p className="text-textDim text-[14.5px] leading-relaxed">
           {prestamo.notasAdmin || 'Si crees que esto es un error, contáctanos por WhatsApp.'}
         </p>
+        <DevResetSolicitudButton />
       </div>
     );
   }
@@ -190,6 +193,7 @@ function PrestamoContent() {
         <Button variant="ghost" onClick={() => router.push('/referidos')}>
           Invita y gana $50 por cada chofer
         </Button>
+        <DevResetSolicitudButton />
       </div>
     );
   }
@@ -287,6 +291,8 @@ function PrestamoContent() {
           )}
         </>
       )}
+
+      <DevResetSolicitudButton />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { fetchEstadoUsuario, getBearerHeaders } from '@/lib/auth-client';
 import { auth } from '@/lib/firebase';
+import { DevResetSolicitudButton } from '@/components/DevResetSolicitudButton';
 import { Button, UploadBox } from '@/components/ui';
 import { subirArchivo } from '@/lib/storage';
 
@@ -213,6 +214,7 @@ function KycForm() {
         <Button onClick={handleContinuar} disabled={subiendo}>
           {subiendo ? 'Subiendo...' : 'Continuar'}
         </Button>
+        <DevResetSolicitudButton />
       </div>
     </div>
   );
