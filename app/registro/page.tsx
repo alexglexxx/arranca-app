@@ -65,11 +65,19 @@ function RegistroForm() {
   }, [router]);
 
   useEffect(() => {
-    if (!recaptchaRef.current) {
-      recaptchaRef.current = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size: 'invisible',
-      });
-    }
+    if (recaptchaRef.current) return;
+
+    const container = document.getElementById('recaptcha-container');
+    if (!container) return;
+
+    recaptchaRef.current = new RecaptchaVerifier(auth, container, {
+      size: 'invisible',
+    });
+
+    return () => {
+      recaptchaRef.current?.clear();
+      recaptchaRef.current = null;
+    };
   }, []);
 
   if (verificandoSesion) {

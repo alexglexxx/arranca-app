@@ -15,50 +15,20 @@ export function createHttpError(status: number, message: string) {
   return new HttpError(status, message);
 }
 
-type AdminActor = {
-  kind: 'admin';
-  username: string;
-};
-
 type UserActor = {
   kind: 'user';
   uid: string;
   token: DecodedIdToken;
 };
 
+type AdminActor = {
+  kind: 'admin';
+  uid: string;
+  token: DecodedIdToken;
+  username: string;
+};
+
 export type RequestActor = AdminActor | UserActor;
-
-function decodeBasicAuth(request: NextRequest): AdminActor | null {
-  const authHeader = request.headers.get('authorization');
-  const usuarioEsperado = process.env.ADMIN_USER;
-  const passwordEsperado = process.env.ADMIN_PASSWORD;
-
-  if (!authHeader?.startsWith('Basic ') || !usuarioEsperado || !passwordEsperado) {
-    return null;
-  }
-
-  const encoded = authHeader.slice('Basic '.length).trim();
-
-  try {
-    const credenciales = Buffer.from(encoded, 'base64').toString('utf-8');
-    const separatorIndex = credenciales.indexOf(':');
-
-    if (separatorIndex === -1) {
-      return null;
-    }
-
-    const usuario = credenciales.slice(0, separatorIndex);
-    const password = credenciales.slice(separatorIndex + 1);
-
-    if (usuario === usuarioEsperado && password === passwordEsperado) {
-      return { kind: 'admin', username: usuario };
-    }
-  } catch {
-    return null;
-  }
-
-  return null;
-}
 
 async function decodeBearerToken(request: NextRequest): Promise<UserActor | null> {
   const authHeader = request.headers.get('authorization');
@@ -81,14 +51,70 @@ async function decodeBearerToken(request: NextRequest): Promise<UserActor | null
   }
 }
 
-export async function requireAdmin(request: NextRequest): Promise<AdminActor> {
-  const adminActor = decodeBasicAuth(request);
+function getAdminUidSet(): Set<string> {
+  const fromEnv = process.env.ADMIN_UIDS || '';
+  return new Set(
+    fromEnv
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean)
+  );
+}
 
-  if (!adminActor) {
-    throw new HttpError(401, 'No autorizado.');
+export function isAdminUid(uid: string): boolean {
+  return getAdminUidSet().has(uid);
+}
+
+function buildAdminActor(userActor: UserActor): AdminActor {
+  const decoded = userActor.token;
+  const username =
+    decoded.name ||
+    decoded.email ||
+    decoded.phone_number ||
+    decoded.uid;
+
+  return {
+    kind: 'admin',
+    uid: decoded.uid,
+    token: decoded,
+    username,
+  };
+}
+
+function isAdminUser(userActor: UserActor): boolean {
+  const decoded = userActor.token as DecodedIdToken & {
+    admin?: boolean;
+    role?: string;
+    roles?: string[];
+  };
+
+  if (decoded.admin === true) {
+    return true;
   }
 
-  return adminActor;
+  if (decoded.role === 'admin') {
+    return true;
+  }
+
+  if (Array.isArray(decoded.roles) && decoded.roles.includes('admin')) {
+    return true;
+  }
+
+  return isAdminUid(decoded.uid);
+}
+
+export async function requireAdmin(request: NextRequest): Promise<AdminActor> {
+  const userActor = await decodeBearerToken(request);
+
+  if (!userActor) {
+    throw new HttpError(401, 'Sesión inválida o expirada.');
+  }
+
+  if (!isAdminUser(userActor)) {
+    throw new HttpError(403, 'No autorizado.');
+  }
+
+  return buildAdminActor(userActor);
 }
 
 export async function requireUser(request: NextRequest): Promise<UserActor> {
@@ -102,13 +128,12 @@ export async function requireUser(request: NextRequest): Promise<UserActor> {
 }
 
 export async function requireUserOrAdmin(request: NextRequest): Promise<RequestActor> {
-  const adminActor = decodeBasicAuth(request);
-
-  if (adminActor) {
-    return adminActor;
+  const userActor = await requireUser(request);
+  if (isAdminUser(userActor)) {
+    return buildAdminActor(userActor);
   }
 
-  return requireUser(request);
+  return userActor;
 }
 
 export function assertSameUser(actor: UserActor, userId: string) {
@@ -129,9 +154,9 @@ export function assertAdminOrOwner(actor: RequestActor, ownerUserId: string) {
 
 export function errorResponse(error: unknown, fallbackMessage: string) {
   if (error instanceof HttpError) {
-    return NextResponse.json({ error: error.message }, { status: error.status });
+    return NextResponse.json({ ok: false, error: error.message }, { status: error.status });
   }
 
   console.error(fallbackMessage, error);
-  return NextResponse.json({ error: 'Error interno.' }, { status: 500 });
+  return NextResponse.json({ ok: false, error: 'Error interno.' }, { status: 500 });
 }

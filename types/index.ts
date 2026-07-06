@@ -19,6 +19,23 @@ export type EstadoPrestamo =
   | 'activo'
   | 'pagado'
   | 'mora'
+  | 'rechazado'
+  | 'cancelada';
+
+export type EstadoSolicitudAdelanto =
+  | 'pendiente'
+  | 'aprobada'
+  | 'rechazada'
+  | 'cancelada'
+  | 'pagada'
+  | 'vencida';
+
+export type MetodoPagoManual = 'transferencia' | 'efectivo' | 'otro';
+
+export type EstadoRevisionComprobante =
+  | 'sin_comprobante'
+  | 'pendiente_revision'
+  | 'validado'
   | 'rechazado';
 
 export type EstatusAppChofer = 'conectado' | 'bloqueado' | 'no_visible';
@@ -45,6 +62,10 @@ export interface Usuario {
   referidoPor: string | null; // usuarioId de quien lo refirió, null si nadie
   referidosExitosos: number; // contador de referidos que ya pagaron su primer préstamo
   saldoRecompensas: number; // MXN acumulados por referidos, pendientes de cobrar
+  impulsosDisponibles?: number;
+  impulsosAcumulados?: number;
+  descuentosComisionDisponibles?: number;
+  descuentosComisionUsados?: number;
   // pinHash/pinExpiracion eliminados — el login ahora lo maneja Firebase Auth
   // (Phone Authentication), no un PIN generado manualmente.
 }
@@ -78,26 +99,130 @@ export interface CuestionarioSolicitud {
 export interface Prestamo {
   id: string;
   usuarioId: string;
+  userId?: string;
   monto: number; // 200 en esta fase
+  comisionPorcentaje?: number;
+  comisionMonto?: number;
+  totalAPagar?: number;
   montoSiPagaHoy: number; // monto * 1.05
   montoSiPagaFechaLimite: number; // monto * 1.15
   montoSiPagaVencido: number; // monto * 1.20 — aplica si ya pasó la fecha límite
   fechaSolicitud: number;
+  actualizadoEn?: number;
   fechaAprobacion: number | null;
+  aprobadoEn?: number | null;
+  rechazadoEn?: number | null;
+  canceladoEn?: number | null;
+  vencidoEn?: number | null;
   fechaLimite: number | null;
   fechaPago: number | null;
+  pagadoEn?: number | null;
   montoFinalPagado: number | null;
   estado: EstadoPrestamo;
   comprobantePagoUrl: string | null;
+  metodoPago?: MetodoPagoManual;
+  instruccionesPago?: InstruccionesPagoManual;
+  comprobante?: ComprobantePagoManual;
+  bitacoraAdmin?: BitacoraAdminEvento[];
   cuentaDestino: string;
   capturaPerfilUrl: string | null;
   estatusAppChofer: EstatusAppChofer | null;
   revisadoPor: string | null;
+  decididoPor?: string | null;
+  pagadoRegistradoPor?: string | null;
   checklistCompleto: ChecklistRevision | null;
   notasAdmin: string;
-  cuestionario: CuestionarioSolicitud;
+  motivoRechazo?: string | null;
+  notaAdmin?: string | null;
+  esPrueba?: boolean;
+  cuestionario: CuestionarioSolicitud | null;
   aceptoCompromiso: boolean;
   aceptoCompromisoTimestamp: number;
+}
+
+export interface InstruccionesPagoManual {
+  banco?: string;
+  titular?: string;
+  cuenta?: string;
+  clabe?: string;
+  referencia?: string;
+  nota?: string;
+}
+
+export interface ComprobantePagoManual {
+  reportadoPorUsuario: boolean;
+  reportadoEn?: number | null;
+  montoReportado?: number | null;
+  metodoReportado?: MetodoPagoManual | null;
+  referencia?: string | null;
+  notaUsuario?: string | null;
+  imagenUrl?: string | null;
+  estadoRevision: EstadoRevisionComprobante;
+  revisadoPor?: string | null;
+  revisadoEn?: number | null;
+  notaAdmin?: string | null;
+}
+
+export interface BitacoraAdminEvento {
+  tipo:
+    | 'solicitud_aprobada'
+    | 'solicitud_rechazada'
+    | 'solicitud_cancelada'
+    | 'solicitud_vencida'
+    | 'pago_marcado_manual'
+    | 'pago_reportado_usuario'
+    | 'pago_reportado_admin'
+    | 'comprobante_validado'
+    | 'comprobante_rechazado';
+  actorId: string;
+  actorRol: 'admin' | 'usuario';
+  creadoEn: number;
+  nota?: string | null;
+  metadata?: Record<string, string | number | boolean | null | undefined>;
+}
+
+export interface SolicitudAdelanto {
+  id: string;
+  userId: string;
+  monto: number;
+  comisionPorcentaje: number;
+  comisionMonto: number;
+  totalAPagar: number;
+  estado: EstadoSolicitudAdelanto;
+  creadoEn: number;
+  actualizadoEn: number;
+  aprobadoEn?: number | null;
+  rechazadoEn?: number | null;
+  canceladoEn?: number | null;
+  pagadoEn?: number | null;
+  vencidoEn?: number | null;
+  decididoPor?: string | null;
+  pagadoRegistradoPor?: string | null;
+  motivoRechazo?: string | null;
+  notaAdmin?: string | null;
+  esPrueba?: boolean;
+  fechaLimite?: number | null;
+  rawEstado?: EstadoPrestamo;
+  metodoPago?: MetodoPagoManual;
+  instruccionesPago?: InstruccionesPagoManual;
+  comprobante?: ComprobantePagoManual;
+  bitacoraAdmin?: BitacoraAdminEvento[];
+}
+
+export interface HistorialSolicitudResumen {
+  id: string;
+  fecha: number;
+  monto: number;
+  totalAPagar: number;
+  estado: EstadoSolicitudAdelanto;
+  pagadoEn?: number | null;
+}
+
+export interface HistorialUsuarioAdminResumen {
+  totalSolicitudes: number;
+  pagadas: number;
+  vencidas: number;
+  rechazadas: number;
 }
 
 export interface ConfiguracionCapital {
@@ -105,6 +230,105 @@ export interface ConfiguracionCapital {
   capitalPrestado: number;
   capitalDisponible: number;
   topeMaximoPorPrestamo: number;
+}
+
+export interface PagoReferido {
+  usuarioId: string;
+  monto: number;
+  fecha?: number;
+  fechaPago?: number;
+  metodoPago?: string | null;
+  referencia?: string | null;
+  adminUid?: string | null;
+  estado?: 'pagado';
+}
+
+export type TipoTriggerPromocion =
+  | 'referido_primer_pago_completo'
+  | 'usuario_pago_puntual'
+  | 'usuario_completa_kyc'
+  | 'racha_pagos_puntuales';
+
+export type TipoRecompensaPromocion =
+  | 'bono_dinero'
+  | 'impulsos'
+  | 'descuento_comision';
+
+export type EstadoPromocion =
+  | 'activa'
+  | 'pausada'
+  | 'agotada'
+  | 'finalizada';
+
+export type EstadoActivacionPromocion =
+  | 'pendiente'
+  | 'aplicada'
+  | 'pagada'
+  | 'cancelada';
+
+export interface Promocion {
+  id: string;
+  nombre: string;
+  descripcion?: string | null;
+  estado: EstadoPromocion;
+  trigger: TipoTriggerPromocion;
+  recompensa: {
+    tipo: TipoRecompensaPromocion;
+    cantidad: number;
+  };
+  presupuesto: {
+    tipo: 'dinero' | 'unidades' | 'ilimitado';
+    total: number | null;
+    disponible: number | null;
+  };
+  limitePorUsuario?: number | null;
+  fechaInicio: number;
+  fechaFin?: number | null;
+  creadoEn: number;
+  actualizadoEn: number;
+}
+
+export interface ActivacionPromocion {
+  id: string;
+  promocionId: string;
+  usuarioId: string;
+  referidoId?: string | null;
+  prestamoId?: string | null;
+  trigger: TipoTriggerPromocion;
+  recompensaTipo: TipoRecompensaPromocion;
+  cantidad: number;
+  estado: EstadoActivacionPromocion;
+  creadoEn: number;
+  aplicadaEn?: number | null;
+  pagadaEn?: number | null;
+  adminUid?: string | null;
+  metadata?: Record<string, unknown>;
+}
+
+export interface AdminCapitalResumen {
+  ok: true;
+  configurado: boolean;
+  capitalOperativoTotal: number;
+  disponibleParaTransferir: number;
+  capitalComprometido: number;
+  capitalPrestadoActivo: number;
+  totalPorRecuperar: number;
+  gananciaEsperada: number;
+  gananciaGenerada: number | null;
+  bonosReferidosPendientes: number;
+  bonosReferidosPagados: number | null;
+  usuariosConSaldoRecompensa: number;
+  disponibleRealDespuesDeBonos: number;
+  topeMaximoPorPrestamo: number;
+  capitalTotal: number;
+  capitalPrestado: number;
+  capitalDisponible: number;
+  promocionesActivas: number;
+  promocionesAgotadas: number;
+  activacionesPendientes: number;
+  impulsosEmitidos: number;
+  bonosDineroPendientes: number;
+  presupuestoPromocionalDisponible: number;
 }
 
 export interface EstadoUsuarioRouteInfo {

@@ -6,7 +6,6 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { getBearerHeaders } from '@/lib/auth-client';
 import { auth } from '@/lib/firebase';
 import { BrandHeader, Button, Card, CardRow } from '@/components/ui';
-import { REFERIDOS } from '@/types';
 
 interface DatosReferido {
   nombre: string;
@@ -75,10 +74,10 @@ export default function ReferidosPage() {
       <h1 className="font-display text-[28px] font-semibold leading-[1.15] -tracking-wide mb-2">
         Invita y
         <br />
-        gana ${REFERIDOS.RECOMPENSA_MXN}
+        activa beneficios
       </h1>
       <p className="text-textDim text-[14.5px] leading-relaxed mb-7">
-        Por cada chofer que invites y pague su primer préstamo, te depositamos ${REFERIDOS.RECOMPENSA_MXN}.
+        Comparte tu código con otros choferes. Cuando completen su primer adelanto, podrás activar beneficios según las promociones disponibles.
       </p>
 
       <Card className="text-center py-6">

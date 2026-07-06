@@ -15,7 +15,7 @@
 // (ver /api/prestamos/pagar).
 
 import { NextRequest, NextResponse } from 'next/server';
-import { assertSameUser, errorResponse, requireUser } from '@/lib/auth';
+import { assertSameUser, errorResponse, isAdminUid, requireUser } from '@/lib/auth';
 import { adminDb } from '@/lib/firebase-admin';
 import { resolveUserRouteState } from '@/lib/user-state';
 import { Usuario } from '@/types';
@@ -40,6 +40,19 @@ export async function POST(request: NextRequest) {
         { error: 'firebaseUid y telefono son obligatorios.' },
         { status: 400 }
       );
+    }
+
+    if (isAdminUid(firebaseUid)) {
+      return NextResponse.json({
+        ok: true,
+        usuarioId: firebaseUid,
+        usuario: { estado: 'admin' },
+        estadoUsuario: 'admin',
+        estadoSolicitud: 'sin_solicitud',
+        estadoPrestamo: 'sin_prestamo',
+        prestamoId: null,
+        nextRoute: '/admin/solicitudes',
+      });
     }
 
     const usuarioRef = adminDb.collection('usuarios').doc(firebaseUid);
@@ -116,6 +129,10 @@ export async function POST(request: NextRequest) {
       referidoPor,
       referidosExitosos: 0,
       saldoRecompensas: 0,
+      impulsosDisponibles: 0,
+      impulsosAcumulados: 0,
+      descuentosComisionDisponibles: 0,
+      descuentosComisionUsados: 0,
     };
 
     await usuarioRef.set(nuevoUsuario);

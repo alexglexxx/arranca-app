@@ -1,26 +1,15 @@
-import type { QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { adminDb } from '@/lib/firebase-admin';
 import type {
   EstadoPrestamo,
   EstadoUsuarioNavegable,
   EstadoUsuarioRouteInfo,
-  Prestamo,
   Usuario,
 } from '@/types';
+import { mapEstadoPrestamoToSolicitud, obtenerSolicitudActualUsuario } from '@/lib/solicitudes';
 import { resolveUserNextRoute } from '@/lib/userRouting';
 
 function tieneKycCompleto(usuario: Usuario): boolean {
   return Boolean(usuario.selfieIneUrl && usuario.tarjetaCirculacionUrl);
-}
-
-function ordenarPrestamosPorFechaDesc(
-  prestamos: QueryDocumentSnapshot[]
-): QueryDocumentSnapshot[] {
-  return [...prestamos].sort((a, b) => {
-    const fechaA = Number(a.data().fechaSolicitud || 0);
-    const fechaB = Number(b.data().fechaSolicitud || 0);
-    return fechaB - fechaA;
-  });
 }
 
 function resolverEstadoConPrestamo(
@@ -31,19 +20,19 @@ function resolverEstadoConPrestamo(
 ): EstadoUsuarioRouteInfo {
   let estado: EstadoUsuarioNavegable;
 
-  switch (estadoPrestamo) {
-    case 'pendiente_revision':
+  switch (mapEstadoPrestamoToSolicitud(estadoPrestamo)) {
+    case 'pendiente':
       estado = 'solicitud_en_revision';
       break;
-    case 'rechazado':
+    case 'rechazada':
       estado = 'rechazado';
       break;
-    case 'activo':
-    case 'aprobado':
-    case 'mora':
+    case 'aprobada':
+    case 'vencida':
       estado = 'prestamo_activo';
       break;
-    case 'pagado':
+    case 'pagada':
+    case 'cancelada':
     default:
       estado = 'aprobado';
       break;
@@ -82,20 +71,13 @@ export async function resolveUserRouteState(
 
   const usuario = { id: usuarioSnap.id, ...usuarioSnap.data() } as Usuario;
 
-  const prestamosSnap = await adminDb
-    .collection('prestamos')
-    .where('usuarioId', '==', usuarioId)
-    .limit(20)
-    .get();
-
-  const prestamosOrdenados = ordenarPrestamosPorFechaDesc(prestamosSnap.docs);
-  const prestamoActual = prestamosOrdenados[0] ?? null;
+  const prestamoActual = await obtenerSolicitudActualUsuario(usuarioId);
 
   if (prestamoActual) {
     return resolverEstadoConPrestamo(
       usuarioId,
       usuario.estadoVerificacion,
-      prestamoActual.data().estado as Prestamo['estado'],
+      prestamoActual.rawEstado as EstadoPrestamo,
       prestamoActual.id
     );
   }

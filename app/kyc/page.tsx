@@ -120,7 +120,7 @@ function KycForm() {
         return;
       }
 
-      router.push(`/solicitar?capturaPerfilUrl=${encodeURIComponent(capturaPerfilUrl)}`);
+      router.push('/solicitud');
     } catch {
       setError('No se pudo subir tus archivos. Revisa tu conexión.');
     } finally {

@@ -19,9 +19,9 @@ export function resolveUserNextRoute({
     case 'solicitud_en_revision':
     case 'prestamo_activo':
     case 'rechazado':
-      return prestamoId ? `/prestamo?prestamoId=${encodeURIComponent(prestamoId)}` : '/prestamo';
+      return prestamoId ? `/solicitud?solicitudId=${encodeURIComponent(prestamoId)}` : '/solicitud';
     case 'aprobado':
-      return '/solicitar';
+      return '/solicitud';
     default:
       return '/';
   }

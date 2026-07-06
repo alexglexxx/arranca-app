@@ -59,12 +59,37 @@ export default function IngresarPage() {
   }, [router]);
 
   useEffect(() => {
-    if (!recaptchaRef.current) {
-      recaptchaRef.current = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size: 'invisible',
-      });
-    }
-  }, []);
+    if (verificandoSesion) return;
+    if (recaptchaRef.current) return;
+
+    const container = document.getElementById('recaptcha-container');
+    if (!container) return;
+
+    const verifier = new RecaptchaVerifier(auth, container, {
+      size: 'invisible',
+      callback: () => {
+        setError(null);
+      },
+      'expired-callback': () => {
+        verifier.clear();
+        recaptchaRef.current = null;
+      },
+    });
+
+    recaptchaRef.current = verifier;
+
+    verifier.render().catch((err) => {
+      console.error('No se pudo renderizar reCAPTCHA:', err);
+      setError('No se pudo cargar la verificación anti-spam.');
+      verifier.clear();
+      recaptchaRef.current = null;
+    });
+
+    return () => {
+      recaptchaRef.current?.clear();
+      recaptchaRef.current = null;
+    };
+  }, [verificandoSesion]);
 
   if (verificandoSesion) {
     return (
@@ -103,7 +128,14 @@ export default function IngresarPage() {
       router.push('/verificar');
     } catch (err) {
       console.error(err);
-      setError('No se pudo enviar el código SMS.');
+
+      recaptchaRef.current?.clear();
+      recaptchaRef.current = null;
+
+      const firebaseError = err as { code?: string; message?: string };
+      const code = firebaseError.code || 'error-desconocido';
+
+      setError(`No se pudo enviar el código SMS. ${code}`);
     } finally {
       setCargando(false);
     }

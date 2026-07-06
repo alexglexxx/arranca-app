@@ -1,21 +1,10 @@
-// POST /api/prestamos/pagar
-// Dos pasos separados a propósito (checklist D): el chofer sube su comprobante
-// (esto NO marca como pagado automáticamente), y el admin confirma manualmente
-// que el dinero llegó antes de liberar el capital y actualizar el historial.
-//
-// Este archivo expone ambos pasos en una sola route, diferenciados por el
-// campo "accion" en el body.
-
 import { NextRequest, NextResponse } from 'next/server';
+import { assertAdminOrOwner, errorResponse, requireAdmin, requireUserOrAdmin } from '@/lib/auth';
 import {
-  assertAdminOrOwner,
-  createHttpError,
-  errorResponse,
-  requireAdmin,
-  requireUserOrAdmin,
-} from '@/lib/auth';
-import { adminDb } from '@/lib/firebase-admin';
-import { REFERIDOS } from '@/types';
+  actualizarEstadoSolicitud,
+  obtenerSolicitudPorId,
+  reportarPagoSolicitudLegacy,
+} from '@/lib/solicitudes';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,18 +13,71 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { accion, prestamoId } = body;
 
+    if (!prestamoId) {
+      return NextResponse.json({ error: 'prestamoId es obligatorio.' }, { status: 400 });
+    }
+
     if (accion === 'subir_comprobante') {
+      if (!body.comprobantePagoUrl) {
+        return NextResponse.json(
+          { error: 'comprobantePagoUrl es obligatorio.' },
+          { status: 400 }
+        );
+      }
+
       const actor = await requireUserOrAdmin(request);
-      return await subirComprobante(actor, prestamoId, body.comprobantePagoUrl);
+      const solicitud = await obtenerSolicitudPorId(prestamoId);
+
+      if (!solicitud) {
+        return NextResponse.json({ error: 'Prestamo no encontrado.' }, { status: 404 });
+      }
+
+      assertAdminOrOwner(actor, solicitud.userId);
+
+      const actualizada = await reportarPagoSolicitudLegacy({
+        solicitudId: prestamoId,
+        actorId: actor.kind === 'admin' ? actor.username : actor.uid,
+        actorRol: actor.kind === 'admin' ? 'admin' : 'usuario',
+        ownerUserId: solicitud.userId,
+        comprobantePagoUrl: body.comprobantePagoUrl,
+        montoReportado: Number(body.montoReportado || solicitud.totalAPagar),
+        referencia: body.referencia,
+        notaUsuario: body.notaUsuario,
+      });
+
+      return NextResponse.json({
+        comprobanteSubido: true,
+        ok: true,
+        solicitud: actualizada,
+      });
     }
 
     if (accion === 'confirmar_pago') {
       const adminActor = await requireAdmin(request);
-      return await confirmarPago(
-        prestamoId,
-        body.montoFinalPagado,
-        body.confirmadoPor || adminActor.username
-      );
+      const solicitud = await obtenerSolicitudPorId(prestamoId);
+
+      if (!solicitud) {
+        return NextResponse.json({ error: 'Prestamo no encontrado.' }, { status: 404 });
+      }
+
+      const accionAdmin =
+        solicitud.comprobante?.estadoRevision === 'pendiente_revision'
+          ? 'validar_pago_reportado'
+          : 'marcar_pagada';
+
+      const actualizada = await actualizarEstadoSolicitud({
+        solicitudId: prestamoId,
+        accion: accionAdmin,
+        actorId: body.confirmadoPor || adminActor.username,
+        montoFinalPagado: Number(body.montoFinalPagado || solicitud.totalAPagar),
+        notaAdmin: 'Confirmado desde el endpoint legacy /api/prestamos/pagar.',
+      });
+
+      return NextResponse.json({
+        pagoConfirmado: true,
+        ok: true,
+        solicitud: actualizada,
+      });
     }
 
     return NextResponse.json(
@@ -45,135 +87,4 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return errorResponse(error, 'Error en /api/prestamos/pagar:');
   }
-}
-
-async function subirComprobante(
-  actor: Awaited<ReturnType<typeof requireUserOrAdmin>>,
-  prestamoId: string,
-  comprobantePagoUrl: string
-) {
-  if (!prestamoId || !comprobantePagoUrl) {
-    return NextResponse.json(
-      { error: 'prestamoId y comprobantePagoUrl son obligatorios.' },
-      { status: 400 }
-    );
-  }
-
-  const prestamoRef = adminDb.collection('prestamos').doc(prestamoId);
-  const prestamoSnap = await prestamoRef.get();
-
-  if (!prestamoSnap.exists) {
-    return NextResponse.json({ error: 'Préstamo no encontrado.' }, { status: 404 });
-  }
-
-  const prestamo = prestamoSnap.data()!;
-  assertAdminOrOwner(actor, prestamo.usuarioId);
-
-  if (prestamo.estado !== 'activo') {
-    return NextResponse.json(
-      { error: 'Solo se puede subir comprobante de préstamos activos.' },
-      { status: 400 }
-    );
-  }
-
-  await prestamoRef.update({ comprobantePagoUrl });
-
-  return NextResponse.json({ comprobanteSubido: true });
-}
-
-async function confirmarPago(
-  prestamoId: string,
-  montoFinalPagado: number,
-  confirmadoPor: string
-) {
-  if (!prestamoId || !montoFinalPagado) {
-    return NextResponse.json(
-      { error: 'prestamoId y montoFinalPagado son obligatorios.' },
-      { status: 400 }
-    );
-  }
-
-  const resultado = await adminDb.runTransaction(async (transaction) => {
-    const prestamoRef = adminDb.collection('prestamos').doc(prestamoId);
-    const prestamoSnap = await transaction.get(prestamoRef);
-
-    if (!prestamoSnap.exists) {
-      throw createHttpError(404, 'Préstamo no encontrado.');
-    }
-
-    const prestamo = prestamoSnap.data()!;
-
-    if (prestamo.estado !== 'activo') {
-      throw createHttpError(400, 'Solo se puede confirmar pago de préstamos activos.');
-    }
-
-    const capitalRef = adminDb.collection('configuracion').doc('capital');
-    const capitalSnap = await transaction.get(capitalRef);
-    if (!capitalSnap.exists) {
-      throw createHttpError(400, 'No se ha configurado el capital del sistema.');
-    }
-    const capital = capitalSnap.data()!;
-
-    const usuarioRef = adminDb.collection('usuarios').doc(prestamo.usuarioId);
-    const usuarioSnap = await transaction.get(usuarioRef);
-    if (!usuarioSnap.exists) {
-      throw createHttpError(404, 'Usuario no encontrado.');
-    }
-    const usuario = usuarioSnap.data()!;
-
-    // Programa de referidos: la recompensa se otorga SOLO cuando este es el
-    // PRIMER préstamo que el usuario completa (prestamosCompletados === 0
-    // todavía, antes de incrementarlo abajo) Y tiene un referidor registrado.
-    // Esto evita pagar recompensa múltiples veces por la misma persona.
-    const esPrimerPrestamoCompletado = (usuario.prestamosCompletados || 0) === 0;
-    const tieneReferidor = !!usuario.referidoPor;
-    let referidorId: string | null = null;
-    let descuentoReferido = 0;
-
-    if (esPrimerPrestamoCompletado && tieneReferidor) {
-      const referidorRef = adminDb.collection('usuarios').doc(usuario.referidoPor);
-      const referidorSnap = await transaction.get(referidorRef);
-
-      // Solo se otorga si el referidor todavía existe (no debería pasar que
-      // no exista, pero es una validación defensiva barata)
-      if (referidorSnap.exists) {
-        const referidor = referidorSnap.data()!;
-        referidorId = referidorRef.id;
-
-        transaction.update(referidorRef, {
-          referidosExitosos: (referidor.referidosExitosos || 0) + 1,
-          saldoRecompensas: (referidor.saldoRecompensas || 0) + REFERIDOS.RECOMPENSA_MXN,
-        });
-        descuentoReferido = REFERIDOS.RECOMPENSA_MXN;
-
-        // La recompensa sale del capital real — es dinero que efectivamente
-        // vas a transferir al referidor, no solo margen no cobrado. Por eso
-        // se descuenta de capitalDisponible, igual que un préstamo nuevo.
-      }
-    }
-
-    transaction.update(prestamoRef, {
-      estado: 'pagado',
-      fechaPago: Date.now(),
-      montoFinalPagado,
-      revisadoPor: confirmadoPor || 'admin',
-    });
-
-    // Libera el capital prestado de vuelta al disponible (checklist: el
-    // capital se recicla — esto es justo el mecanismo de "graduación" que
-    // permite atender más usuarios con el mismo capital)
-    transaction.update(capitalRef, {
-      capitalPrestado: capital.capitalPrestado - prestamo.monto,
-      capitalDisponible: capital.capitalDisponible + prestamo.monto - descuentoReferido,
-    });
-
-    transaction.update(usuarioRef, {
-      prestamosCompletados: (usuario.prestamosCompletados || 0) + 1,
-      enMora: false,
-    });
-
-    return { usuarioId: prestamo.usuarioId, recompensaOtorgadaA: referidorId };
-  });
-
-  return NextResponse.json({ pagoConfirmado: true, ...resultado });
 }
