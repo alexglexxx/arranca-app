@@ -45,6 +45,7 @@ type AdminAction =
   | 'aprobar'
   | 'rechazar'
   | 'cancelar'
+  | 'eliminar'
   | 'marcar_pagada'
   | 'marcar_vencida'
   | 'validar_pago_reportado'
@@ -457,6 +458,23 @@ export async function actualizarEstadoSolicitud(
         }
         break;
       }
+      case 'eliminar': {
+        const montoSolicitud = Number(solicitud.monto || MONTO_BASE);
+
+        if (capital && (estadoActual === 'aprobada' || estadoActual === 'vencida')) {
+          transaction.update(capitalRef, {
+            capitalPrestado: Math.max(0, Number(capital.capitalPrestado || 0) - montoSolicitud),
+            capitalDisponible: Number(capital.capitalDisponible || 0) + montoSolicitud,
+          });
+        }
+
+        if (usuario) {
+          transaction.update(usuarioRef, { enMora: false });
+        }
+
+        transaction.delete(solicitudRef);
+        return normalizarSolicitud(input.solicitudId, solicitud);
+      }
       case 'marcar_pagada':
       case 'validar_pago_reportado': {
         if (input.accion === 'validar_pago_reportado') {
@@ -578,18 +596,19 @@ export function validarTransicion(
   accion: AdminAction
 ) {
   const transiciones: Record<EstadoSolicitudAdelanto, AdminAction[]> = {
-    pendiente: ['aprobar', 'rechazar', 'cancelar'],
+    pendiente: ['aprobar', 'rechazar', 'cancelar', 'eliminar'],
     aprobada: [
       'marcar_pagada',
       'marcar_vencida',
       'cancelar',
+      'eliminar',
       'validar_pago_reportado',
       'rechazar_comprobante',
     ],
-    rechazada: [],
-    cancelada: [],
+    rechazada: ['eliminar'],
+    cancelada: ['eliminar'],
     pagada: [],
-    vencida: ['marcar_pagada', 'validar_pago_reportado', 'rechazar_comprobante'],
+    vencida: ['marcar_pagada', 'eliminar', 'validar_pago_reportado', 'rechazar_comprobante'],
   };
 
   if (!transiciones[estadoActual].includes(accion)) {

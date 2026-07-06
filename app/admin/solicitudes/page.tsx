@@ -15,6 +15,7 @@ type AdminAction =
   | 'aprobar'
   | 'rechazar'
   | 'cancelar'
+  | 'eliminar'
   | 'marcar_pagada'
   | 'marcar_vencida'
   | 'validar_pago_reportado'
@@ -117,6 +118,13 @@ export default function AdminSolicitudesPage() {
       const nota = window.prompt('Motivo para rechazar el comprobante:');
       if (nota === null) return;
       notaAdmin = nota.trim() || 'No coincide la informacion reportada.';
+    }
+
+    if (accion === 'eliminar') {
+      const confirmado = window.confirm(
+        'Esto eliminará completamente la solicitud de prueba. No quedará historial de esta solicitud. ¿Continuar?'
+      );
+      if (!confirmado) return;
     }
 
     setProcesandoId(solicitudId);
@@ -496,13 +504,18 @@ function ResumenFinancieroAdmin({
 function accionesPorEstado(solicitud: SolicitudAdminItem) {
   const acciones: Array<{ id: AdminAction; label: string; className: string }> = [];
   const revision = solicitud.comprobante?.estadoRevision || 'sin_comprobante';
+  const eliminarAction: { id: AdminAction; label: string; className: string } = {
+    id: 'eliminar',
+    label: 'Eliminar',
+    className: 'border-danger/40 text-danger',
+  };
 
   switch (solicitud.estado) {
     case 'pendiente':
       acciones.push(
         { id: 'aprobar', label: 'Aprobar', className: 'border-green/40 text-green' },
         { id: 'rechazar', label: 'Rechazar', className: 'border-danger/40 text-danger' },
-        { id: 'cancelar', label: 'Cancelar', className: 'border-border text-textDim' }
+        eliminarAction
       );
       break;
     case 'aprobada':
@@ -517,13 +530,14 @@ function accionesPorEstado(solicitud: SolicitudAdminItem) {
             id: 'rechazar_comprobante',
             label: 'Rechazar comprobante',
             className: 'border-danger/40 text-danger',
-          }
+          },
+          eliminarAction
         );
       } else {
         acciones.push(
           { id: 'marcar_pagada', label: 'Marcar pagada', className: 'border-green/40 text-green' },
           { id: 'marcar_vencida', label: 'Marcar vencida', className: 'border-danger/40 text-danger' },
-          { id: 'cancelar', label: 'Cancelar', className: 'border-border text-textDim' }
+          eliminarAction
         );
       }
       break;
@@ -539,13 +553,19 @@ function accionesPorEstado(solicitud: SolicitudAdminItem) {
             id: 'rechazar_comprobante',
             label: 'Rechazar comprobante',
             className: 'border-danger/40 text-danger',
-          }
+          },
+          eliminarAction
         );
       } else {
         acciones.push(
-          { id: 'marcar_pagada', label: 'Marcar pagada', className: 'border-green/40 text-green' }
+          { id: 'marcar_pagada', label: 'Marcar pagada', className: 'border-green/40 text-green' },
+          eliminarAction
         );
       }
+      break;
+    case 'rechazada':
+    case 'cancelada':
+      acciones.push(eliminarAction);
       break;
     default:
       break;
