@@ -65,20 +65,37 @@ function RegistroForm() {
   }, [router]);
 
   useEffect(() => {
+    if (verificandoSesion) return;
     if (recaptchaRef.current) return;
 
     const container = document.getElementById('recaptcha-container');
     if (!container) return;
 
-    recaptchaRef.current = new RecaptchaVerifier(auth, container, {
+    const verifier = new RecaptchaVerifier(auth, container, {
       size: 'invisible',
+      callback: () => {
+        setError(null);
+      },
+      'expired-callback': () => {
+        verifier.clear();
+        recaptchaRef.current = null;
+      },
+    });
+
+    recaptchaRef.current = verifier;
+
+    verifier.render().catch((err) => {
+      console.error('No se pudo renderizar reCAPTCHA:', err);
+      setError('No se pudo cargar la verificación anti-spam.');
+      verifier.clear();
+      recaptchaRef.current = null;
     });
 
     return () => {
       recaptchaRef.current?.clear();
       recaptchaRef.current = null;
     };
-  }, []);
+  }, [verificandoSesion]);
 
   if (verificandoSesion) {
     return (
@@ -117,7 +134,14 @@ function RegistroForm() {
       router.push('/verificar');
     } catch (err) {
       console.error(err);
-      setError('No se pudo enviar el código. Revisa tu número e intenta de nuevo.');
+
+      recaptchaRef.current?.clear();
+      recaptchaRef.current = null;
+
+      const firebaseError = err as { code?: string; message?: string };
+      const code = firebaseError.code || 'error-desconocido';
+
+      setError(`No se pudo enviar el código. ${code}`);
     } finally {
       setCargando(false);
     }
