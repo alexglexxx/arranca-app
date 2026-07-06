@@ -1,11 +1,8 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { onAuthStateChanged, type User } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-import { getBearerHeaders } from '@/lib/auth-client';
 import { Card } from '@/components/ui';
 import type {
   ActivacionPromocion,
@@ -30,7 +27,6 @@ const RECOMPENSAS: TipoRecompensaPromocion[] = [
 
 export default function AdminPromocionesPage() {
   const router = useRouter();
-  const [usuario, setUsuario] = useState<User | null>(null);
   const [promociones, setPromociones] = useState<Promocion[]>([]);
   const [activaciones, setActivaciones] = useState<ActivacionPromocion[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -46,38 +42,21 @@ export default function AdminPromocionesPage() {
     limitePorUsuario: '',
   });
 
-  useEffect(() => {
-    let activo = true;
-
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!activo) return;
-
-      if (!user) {
-        router.replace('/ingresar');
-        return;
-      }
-
-      setUsuario(user);
-      await cargar(user);
-    });
-
-    return () => {
-      activo = false;
-      unsubscribe();
-    };
-  }, [router]);
-
-  async function cargar(user: User) {
+  const cargar = useCallback(async () => {
     setError(null);
 
     try {
-      const headers = await getBearerHeaders(user);
       const [promosRes, activacionesRes] = await Promise.all([
-        fetch('/api/admin/promociones', { headers, cache: 'no-store' }),
-        fetch('/api/admin/promociones/activaciones', { headers, cache: 'no-store' }),
+        fetch('/api/admin/promociones', { cache: 'no-store' }),
+        fetch('/api/admin/promociones/activaciones', { cache: 'no-store' }),
       ]);
       const promosData = await promosRes.json();
       const activacionesData = await activacionesRes.json();
+
+      if (promosRes.status === 401 || activacionesRes.status === 401) {
+        router.replace('/admin/login');
+        return;
+      }
 
       if (!promosRes.ok) {
         setError(promosData.error || 'No se pudieron cargar promociones.');
@@ -96,11 +75,14 @@ export default function AdminPromocionesPage() {
     } finally {
       setCargando(false);
     }
-  }
+  }, [router]);
+
+  useEffect(() => {
+    void cargar();
+  }, [cargar]);
 
   async function crearPromocion(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!usuario) return;
 
     setProcesandoId('crear');
     setError(null);
@@ -117,9 +99,9 @@ export default function AdminPromocionesPage() {
     try {
       const res = await fetch('/api/admin/promociones', {
         method: 'POST',
-        headers: await getBearerHeaders(usuario, {
+        headers: {
           'Content-Type': 'application/json',
-        }),
+        },
         body: JSON.stringify({
           nombre: form.nombre,
           estado: 'pausada',
@@ -134,13 +116,18 @@ export default function AdminPromocionesPage() {
       });
       const data = await res.json();
 
+      if (res.status === 401) {
+        router.replace('/admin/login');
+        return;
+      }
+
       if (!res.ok) {
         setError(data.error || 'No se pudo crear la promoción.');
         return;
       }
 
       setForm((actual) => ({ ...actual, nombre: '' }));
-      await cargar(usuario);
+      await cargar();
     } catch {
       setError('No se pudo crear la promoción.');
     } finally {
@@ -149,27 +136,30 @@ export default function AdminPromocionesPage() {
   }
 
   async function actualizarPromocion(id: string, body: Record<string, unknown>) {
-    if (!usuario) return;
-
     setProcesandoId(id);
     setError(null);
 
     try {
       const res = await fetch(`/api/admin/promociones/${id}`, {
         method: 'PATCH',
-        headers: await getBearerHeaders(usuario, {
+        headers: {
           'Content-Type': 'application/json',
-        }),
+        },
         body: JSON.stringify(body),
       });
       const data = await res.json();
+
+      if (res.status === 401) {
+        router.replace('/admin/login');
+        return;
+      }
 
       if (!res.ok) {
         setError(data.error || 'No se pudo actualizar la promoción.');
         return;
       }
 
-      await cargar(usuario);
+      await cargar();
     } catch {
       setError('No se pudo actualizar la promoción.');
     } finally {

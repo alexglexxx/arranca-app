@@ -1,11 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { onAuthStateChanged, type User } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-import { getBearerHeaders } from '@/lib/auth-client';
 import { Card } from '@/components/ui';
 import type {
   AdminCapitalResumen,
@@ -34,7 +31,6 @@ type SolicitudAdminItem = SolicitudAdelanto & {
 
 export default function AdminSolicitudesPage() {
   const router = useRouter();
-  const [usuario, setUsuario] = useState<User | null>(null);
   const [solicitudes, setSolicitudes] = useState<SolicitudAdminItem[]>([]);
   const [capitalResumen, setCapitalResumen] = useState<AdminCapitalResumen | null>(null);
   const [cargandoCapital, setCargandoCapital] = useState(false);
@@ -43,38 +39,20 @@ export default function AdminSolicitudesPage() {
   const [procesandoId, setProcesandoId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let activo = true;
-
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!activo) return;
-
-      if (!user) {
-        router.replace('/ingresar');
-        return;
-      }
-
-      setUsuario(user);
-      void cargarCapital(user);
-      await cargarSolicitudes(user);
-    });
-
-    return () => {
-      activo = false;
-      unsubscribe();
-    };
-  }, [router]);
-
-  async function cargarSolicitudes(user: User) {
+  const cargarSolicitudes = useCallback(async () => {
     setCargando(true);
     setError(null);
 
     try {
       const response = await fetch('/api/admin/solicitudes', {
-        headers: await getBearerHeaders(user),
         cache: 'no-store',
       });
       const data = await response.json();
+
+      if (response.status === 401) {
+        router.replace('/admin/login');
+        return;
+      }
 
       if (!response.ok) {
         setError(data.error || 'No se pudo cargar el panel admin.');
@@ -88,18 +66,22 @@ export default function AdminSolicitudesPage() {
     } finally {
       setCargando(false);
     }
-  }
+  }, [router]);
 
-  async function cargarCapital(user: User) {
+  const cargarCapital = useCallback(async () => {
     setCargandoCapital(true);
     setCapitalError(null);
 
     try {
       const response = await fetch('/api/admin/capital', {
-        headers: await getBearerHeaders(user),
         cache: 'no-store',
       });
       const data = await response.json();
+
+      if (response.status === 401) {
+        router.replace('/admin/login');
+        return;
+      }
 
       if (!response.ok) {
         setCapitalResumen(null);
@@ -114,11 +96,14 @@ export default function AdminSolicitudesPage() {
     } finally {
       setCargandoCapital(false);
     }
-  }
+  }, [router]);
+
+  useEffect(() => {
+    void cargarCapital();
+    void cargarSolicitudes();
+  }, [cargarCapital, cargarSolicitudes]);
 
   async function ejecutarAccion(solicitudId: string, accion: AdminAction) {
-    if (!usuario) return;
-
     let motivoRechazo: string | undefined;
     let notaAdmin: string | undefined;
 
@@ -140,9 +125,9 @@ export default function AdminSolicitudesPage() {
     try {
       const response = await fetch(`/api/admin/solicitudes/${solicitudId}`, {
         method: 'PATCH',
-        headers: await getBearerHeaders(usuario, {
+        headers: {
           'Content-Type': 'application/json',
-        }),
+        },
         body: JSON.stringify({
           accion,
           motivoRechazo,
@@ -151,13 +136,18 @@ export default function AdminSolicitudesPage() {
       });
       const data = await response.json();
 
+      if (response.status === 401) {
+        router.replace('/admin/login');
+        return;
+      }
+
       if (!response.ok) {
         setError(data.error || 'No se pudo actualizar la solicitud.');
         return;
       }
 
-      await cargarSolicitudes(usuario);
-      void cargarCapital(usuario);
+      await cargarSolicitudes();
+      void cargarCapital();
     } catch {
       setError('No se pudo actualizar la solicitud.');
     } finally {

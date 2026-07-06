@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import type { DecodedIdToken } from 'firebase-admin/auth';
+import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from '@/lib/admin-session';
 import { adminAuth } from '@/lib/firebase-admin';
 
 class HttpError extends Error {
@@ -24,7 +25,7 @@ type UserActor = {
 type AdminActor = {
   kind: 'admin';
   uid: string;
-  token: DecodedIdToken;
+  token?: DecodedIdToken;
   username: string;
 };
 
@@ -81,6 +82,22 @@ function buildAdminActor(userActor: UserActor): AdminActor {
   };
 }
 
+async function decodeAdminSession(request: NextRequest): Promise<AdminActor | null> {
+  const session = await verifyAdminSessionToken(
+    request.cookies.get(ADMIN_SESSION_COOKIE_NAME)?.value
+  );
+
+  if (!session) {
+    return null;
+  }
+
+  return {
+    kind: 'admin',
+    uid: `admin:${session.username}`,
+    username: session.username,
+  };
+}
+
 function isAdminUser(userActor: UserActor): boolean {
   const decoded = userActor.token as DecodedIdToken & {
     admin?: boolean;
@@ -104,17 +121,13 @@ function isAdminUser(userActor: UserActor): boolean {
 }
 
 export async function requireAdmin(request: NextRequest): Promise<AdminActor> {
-  const userActor = await decodeBearerToken(request);
+  const adminActor = await decodeAdminSession(request);
 
-  if (!userActor) {
-    throw new HttpError(401, 'Sesión inválida o expirada.');
+  if (!adminActor) {
+    throw new HttpError(401, 'Sesión admin inválida o expirada.');
   }
 
-  if (!isAdminUser(userActor)) {
-    throw new HttpError(403, 'No autorizado.');
-  }
-
-  return buildAdminActor(userActor);
+  return adminActor;
 }
 
 export async function requireUser(request: NextRequest): Promise<UserActor> {
@@ -128,6 +141,11 @@ export async function requireUser(request: NextRequest): Promise<UserActor> {
 }
 
 export async function requireUserOrAdmin(request: NextRequest): Promise<RequestActor> {
+  const adminActor = await decodeAdminSession(request);
+  if (adminActor) {
+    return adminActor;
+  }
+
   const userActor = await requireUser(request);
   if (isAdminUser(userActor)) {
     return buildAdminActor(userActor);

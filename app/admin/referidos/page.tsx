@@ -1,12 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { onAuthStateChanged, type User } from 'firebase/auth';
 import { Button, Card } from '@/components/ui';
-import { auth } from '@/lib/firebase';
-import { getBearerHeaders } from '@/lib/auth-client';
 
 interface Pendiente {
   usuarioId: string;
@@ -20,21 +17,24 @@ interface Pendiente {
 
 export default function ReferidosAdminPage() {
   const router = useRouter();
-  const [usuario, setUsuario] = useState<User | null>(null);
   const [pendientes, setPendientes] = useState<Pendiente[]>([]);
   const [cargando, setCargando] = useState(true);
   const [procesandoId, setProcesandoId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function cargar(user: User) {
+  const cargar = useCallback(async () => {
     setError(null);
 
     try {
       const res = await fetch('/api/admin/referidos/pendientes', {
-        headers: await getBearerHeaders(user),
         cache: 'no-store',
       });
       const data = await res.json();
+
+      if (res.status === 401) {
+        router.replace('/admin/login');
+        return;
+      }
 
       if (!res.ok) {
         setPendientes([]);
@@ -49,48 +49,34 @@ export default function ReferidosAdminPage() {
     } finally {
       setCargando(false);
     }
-  }
-
-  useEffect(() => {
-    let activo = true;
-
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!activo) return;
-
-      if (!user) {
-        router.replace('/ingresar');
-        return;
-      }
-
-      setUsuario(user);
-      await cargar(user);
-    });
-
-    return () => {
-      activo = false;
-      unsubscribe();
-    };
   }, [router]);
 
-  async function marcarPagado(usuarioId: string) {
-    if (!usuario) return;
+  useEffect(() => {
+    void cargar();
+  }, [cargar]);
 
+  async function marcarPagado(usuarioId: string) {
     setProcesandoId(usuarioId);
     setError(null);
 
     try {
       const res = await fetch('/api/admin/referidos/pagar', {
         method: 'POST',
-        headers: await getBearerHeaders(usuario, {
+        headers: {
           'Content-Type': 'application/json',
-        }),
+        },
         body: JSON.stringify({ usuarioId }),
       });
 
       const data = await res.json();
 
+      if (res.status === 401) {
+        router.replace('/admin/login');
+        return;
+      }
+
       if (res.ok) {
-        await cargar(usuario);
+        await cargar();
         return;
       }
 
