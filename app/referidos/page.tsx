@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
 import { getBearerHeaders } from '@/lib/auth-client';
 import { auth } from '@/lib/firebase';
-import { BrandHeader, Button, Card, CardRow } from '@/components/ui';
+import { Button, Card, CardRow } from '@/components/ui';
 
 interface DatosReferido {
   nombre: string;
@@ -68,15 +68,14 @@ export default function ReferidosPage() {
   }
 
   return (
-    <div className="max-w-md mx-auto px-6 pt-8 pb-10 min-h-screen flex flex-col">
-      <BrandHeader />
+    <div className="max-w-md mx-auto px-6 pt-20 pb-10 min-h-screen flex flex-col">
 
-      <h1 className="font-display text-[28px] font-semibold leading-[1.15] -tracking-wide mb-2">
+      <h1 className="font-display text-[28px] font-semibold leading-[1.15] -tracking-wide mb-2 text-on-dark text-soft-outline">
         Invita y
         <br />
         activa beneficios
       </h1>
-      <p className="text-textDim text-[14.5px] leading-relaxed mb-7">
+      <p className="text-on-dark-muted text-[14.5px] leading-relaxed mb-7">
         Comparte tu código con otros choferes. Cuando completen su primer adelanto, podrás activar beneficios según las promociones disponibles.
       </p>
 

@@ -27,7 +27,7 @@ function ArrancaLogo() {
         <rect x="149.5" y="180" width="21" height="34" rx="1.5" fill="#FFC400" />
       </svg>
 
-      <span className="mt-2 text-[1.75rem] font-extrabold uppercase tracking-[0.42em] text-white sm:text-[2rem]">
+      <span className="text-outline mt-2 text-[1.75rem] font-extrabold uppercase tracking-[0.28em] text-on-dark sm:text-[2rem]">
         ARRANCA
       </span>
     </div>
@@ -65,8 +65,8 @@ function BenefitItem({
       </div>
 
       <div>
-        <p className="text-[0.72rem] font-semibold leading-4 text-white">{title}</p>
-        <p className="mt-0.5 text-[0.62rem] leading-3 text-zinc-400">{detail}</p>
+        <p className="text-soft-outline text-[0.72rem] font-semibold leading-4 text-on-dark">{title}</p>
+        <p className="mt-0.5 text-[0.62rem] leading-3 text-on-dark-muted">{detail}</p>
       </div>
     </div>
   );
@@ -105,21 +105,21 @@ export default function HomePage() {
 
   if (verificandoSesion) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#040404] px-6">
+      <main className="flex min-h-screen items-center justify-center bg-bg px-6">
         <div className="h-2.5 w-2.5 rounded-full bg-[#FFC400] shadow-[0_0_22px_rgba(255,196,0,0.75)]" />
       </main>
     );
   }
 
   return (
-    <main className="relative min-h-[100svh] overflow-x-hidden bg-black text-white">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_12%,rgba(255,196,0,0.12),transparent_28%),linear-gradient(180deg,#020202_0%,#000_46%,#020202_100%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_78%,rgba(255,162,54,0.07),transparent_24%)]" />
-      <div className="relative mx-auto flex min-h-[100svh] w-full max-w-[24rem] flex-col items-center px-5 pb-4 pt-4 text-center sm:max-w-[26rem]">
+    <main className="relative min-h-[100svh] overflow-x-hidden bg-bg text-on-dark">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_12%,rgba(250,204,21,0.14),transparent_28%),linear-gradient(180deg,#020617_0%,#07111F_48%,#020617_100%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_78%,rgba(16,185,129,0.10),transparent_24%)]" />
+      <div className="relative mx-auto flex min-h-[100svh] w-full max-w-[24rem] flex-col items-center px-5 pb-4 pt-16 text-center sm:max-w-[26rem]">
         <ArrancaLogo />
 
         <div className="mt-6 w-full">
-          <h1 className="mx-auto max-w-[23rem] text-[clamp(2.15rem,8.2vw,4.8rem)] font-black leading-[0.95] tracking-[-0.035em] text-white">
+          <h1 className="hero-readable text-outline mx-auto max-w-[23rem] text-[clamp(2.15rem,8.2vw,4.8rem)] font-black leading-[0.95] text-on-dark">
             <span className="block whitespace-nowrap">
               Un <span style={{ color: ARRANCA_YELLOW }}>impulso</span> para
             </span>
@@ -132,14 +132,14 @@ export default function HomePage() {
             style={{ backgroundColor: ARRANCA_YELLOW }}
           />
 
-          <p className="mt-4 text-lg leading-[1.38] text-zinc-300">
+          <p className="text-soft-outline mt-4 text-lg leading-[1.38] text-on-dark-muted">
             <span className="block">No dejes que un tanque vacío</span>
             <span className="block">
               detenga <span style={{ color: ARRANCA_YELLOW }}>tu día.</span>
             </span>
           </p>
 
-          <p className="mx-auto mt-3 max-w-[21rem] text-[0.78rem] font-medium leading-5 text-zinc-400">
+          <p className="mx-auto mt-3 max-w-[21rem] text-[0.78rem] font-medium leading-5 text-on-dark-muted">
             Empieza con <span style={{ color: ARRANCA_YELLOW }}>$200 MXN</span> para gasolina.
             Cumple y tu impulso puede <span style={{ color: ARRANCA_YELLOW }}>subir de nivel.</span>
           </p>
@@ -148,7 +148,7 @@ export default function HomePage() {
         <div className="mt-4 flex w-full flex-col gap-2.5">
           <Link
             href={REGISTER_ROUTE}
-            className="inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-2xl px-6 text-base font-bold text-[#111111] shadow-[0_16px_34px_rgba(255,196,0,0.23)] transition hover:-translate-y-0.5"
+            className="button-readable inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-2xl px-6 text-base font-bold transition hover:-translate-y-0.5"
             style={{ backgroundColor: ARRANCA_YELLOW }}
           >
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="#111111" aria-hidden="true">
@@ -158,7 +158,7 @@ export default function HomePage() {
           </Link>
           <Link
             href={LOGIN_ROUTE}
-            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-6 text-[0.95rem] font-semibold text-white transition hover:bg-white/[0.07]"
+            className="card-readable inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-6 text-[0.95rem] font-semibold text-on-dark transition hover:border-white/25"
           >
             <svg viewBox="0 0 24 24" className="h-5 w-5 text-[#FFC400]" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" aria-hidden="true">
               <path d="M5 4h8v15H5z" />
@@ -170,7 +170,7 @@ export default function HomePage() {
           </Link>
         </div>
 
-        <div className="mt-3 w-full overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] shadow-[0_18px_46px_rgba(0,0,0,0.3)] backdrop-blur-sm">
+        <div className="card-dark-readable mt-3 w-full overflow-hidden rounded-2xl">
           <div className="grid grid-cols-3 divide-x divide-white/8">
             <BenefitItem icon="bolt" title="Rápido" detail="Respuesta en minutos" />
             <BenefitItem icon="shield" title="Claro" detail="Términos simples y justos" />
@@ -178,7 +178,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <p className="mt-3 text-[0.72rem] leading-5 text-zinc-500 max-[720px]:hidden">
+        <p className="mt-3 text-[0.72rem] leading-5 text-on-dark-soft max-[720px]:hidden">
           Cuando tú produces, nosotros también crecemos.
         </p>
       </div>

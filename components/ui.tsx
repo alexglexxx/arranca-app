@@ -7,12 +7,12 @@ import { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode } from 'react';
 export function BrandHeader() {
   return (
     <div className="flex items-center gap-2.5 mb-8">
-      <div className="w-[30px] h-[30px] rounded-lg bg-gradient-to-br from-amber to-[#C97E12] flex items-center justify-center flex-shrink-0">
+      <div className="w-[30px] h-[30px] rounded-lg bg-gradient-to-br from-amber to-amber shadow-[0_8px_22px_rgba(250,204,21,0.28)] flex items-center justify-center flex-shrink-0">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#1A1304" strokeWidth="2.4" strokeLinecap="round">
           <path d="M3 12h18M14 5l7 7-7 7" />
         </svg>
       </div>
-      <div className="font-display font-semibold text-[22px] leading-none whitespace-nowrap">
+      <div className="font-display font-semibold text-[22px] leading-none whitespace-nowrap text-on-dark text-soft-outline">
         arranca<span className="text-amber">.</span>
       </div>
     </div>
@@ -26,10 +26,10 @@ export function Button({
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'ghost' }) {
   const base =
-    'w-full py-[18px] rounded-[18px] font-bold text-base transition-opacity disabled:opacity-50 active:scale-[0.98]';
+    'w-full py-[18px] rounded-[18px] font-bold text-base transition disabled:opacity-70 disabled:saturate-50 active:scale-[0.98]';
   const variants = {
-    primary: 'bg-amber text-[#1A1304] shadow-[0_8px_24px_-6px_rgba(244,166,35,0.45)]',
-    ghost: 'bg-transparent border-2 border-border text-text mt-2.5',
+    primary: 'button-readable',
+    ghost: 'bg-surface border border-border text-on-dark-muted mt-2.5 shadow-[0_10px_24px_rgba(0,0,0,0.22)]',
   };
   return (
     <button className={`${base} ${variants[variant]} ${className}`} {...props}>
@@ -44,9 +44,9 @@ export function Field({
 }: InputHTMLAttributes<HTMLInputElement> & { label: string }) {
   return (
     <div className="mb-4">
-      <label className="block text-[14.5px] text-textDim mb-2 font-semibold">{label}</label>
+      <label className="label-readable block text-[14.5px] mb-2 font-semibold">{label}</label>
       <input
-        className="w-full bg-surface border-2 border-border rounded-[16px] px-4 py-[16px] text-text text-base outline-none focus:border-amber transition-colors"
+        className="input-readable w-full rounded-[16px] px-4 py-[16px] text-base outline-none transition-colors"
         {...props}
       />
     </div>
@@ -55,7 +55,7 @@ export function Field({
 
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`bg-surface border border-border rounded-card p-[18px] mb-3.5 ${className}`}>
+    <div className={`card-readable rounded-card p-[18px] mb-3.5 ${className}`}>
       {children}
     </div>
   );
@@ -64,7 +64,7 @@ export function Card({ children, className = '' }: { children: ReactNode; classN
 export function CardRow({ label, value, valueClassName = '' }: { label: string; value: ReactNode; valueClassName?: string }) {
   return (
     <div className="flex justify-between items-baseline py-[9px] border-t border-border first:border-t-0">
-      <span className="text-[14.5px] text-textDim">{label}</span>
+      <span className="text-[14.5px] text-on-dark-muted">{label}</span>
       <span className={`text-[14.5px] font-semibold ${valueClassName}`}>{value}</span>
     </div>
   );
@@ -75,7 +75,7 @@ type EstadoPill = 'activo' | 'pagado' | 'pendiente' | 'mora';
 const PILL_STYLES: Record<EstadoPill, string> = {
   activo: 'bg-amberDim text-amber',
   pagado: 'bg-greenDim text-green',
-  pendiente: 'bg-[#26211B] text-textDim',
+  pendiente: 'bg-surface2 text-on-dark-muted',
   mora: 'bg-[#33201D] text-danger',
 };
 
@@ -114,7 +114,7 @@ export function UploadBox({
       className={`w-full border-2 rounded-[18px] px-4 py-7 text-center mb-3.5 transition-colors ${
         completado
           ? 'border-solid border-green text-green bg-greenDim/30'
-          : 'border-dashed border-border text-textDim'
+          : 'border-dashed border-border text-on-dark-muted bg-surface/50'
       }`}
     >
       {completado ? (

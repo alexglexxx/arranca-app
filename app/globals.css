@@ -1,22 +1,128 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap');
+:root {
+  --arranca-bg: #020617;
+  --arranca-bg-soft: #0f172a;
+  --arranca-card: rgba(15, 23, 42, 0.78);
+  --arranca-card-strong: rgba(15, 23, 42, 0.94);
+  --arranca-border: rgba(255, 255, 255, 0.14);
+  --arranca-border-strong: rgba(255, 255, 255, 0.28);
+  --arranca-text: #f8fafc;
+  --arranca-text-muted: #cbd5e1;
+  --arranca-text-soft: #94a3b8;
+  --arranca-accent: #facc15;
+  --arranca-accent-strong: #f59e0b;
+  --arranca-warning: #facc15;
+  --arranca-danger: #fca5a5;
+  --arranca-success: #86efac;
+}
 
 * {
   box-sizing: border-box;
 }
 
 body {
-  background: #0b0f14;
-  color: #e8ebef;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(250, 204, 21, 0.08), transparent 30rem),
+    linear-gradient(180deg, var(--arranca-bg) 0%, #07111f 52%, var(--arranca-bg) 100%);
+  color: var(--arranca-text);
   font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
 input::placeholder {
-  color: #46505c;
+  color: rgba(203, 213, 225, 0.72);
+}
+
+textarea::placeholder {
+  color: rgba(203, 213, 225, 0.72);
+}
+
+select,
+input,
+textarea {
+  color-scheme: dark;
+}
+
+/* Utilidades de accesibilidad visual para texto y superficies sobre fondos oscuros. */
+.text-on-dark {
+  color: var(--arranca-text);
+}
+
+.text-on-dark-muted {
+  color: var(--arranca-text-muted);
+}
+
+.text-on-dark-soft {
+  color: var(--arranca-text-soft);
+}
+
+.text-soft-outline {
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.85),
+    0 0 14px rgba(0, 0, 0, 0.55);
+}
+
+.text-outline {
+  -webkit-text-stroke: 0.45px rgba(15, 23, 42, 0.75);
+  text-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.9),
+    0 2px 4px rgba(0, 0, 0, 0.85),
+    0 0 18px rgba(0, 0, 0, 0.65);
+}
+
+.text-glow {
+  text-shadow:
+    0 0 16px rgba(250, 204, 21, 0.24),
+    0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+.card-readable {
+  background: var(--arranca-card);
+  border: 1px solid var(--arranca-border);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(16px);
+}
+
+.card-dark-readable {
+  background: var(--arranca-card-strong);
+  border: 1px solid var(--arranca-border-strong);
+  box-shadow: 0 20px 52px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(18px);
+}
+
+.button-readable {
+  border: 1px solid rgba(250, 204, 21, 0.5);
+  background: linear-gradient(135deg, var(--arranca-accent) 0%, var(--arranca-accent-strong) 100%);
+  color: #111827;
+  box-shadow: 0 14px 32px rgba(250, 204, 21, 0.28);
+}
+
+.input-readable {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1.5px solid var(--arranca-border-strong);
+  color: var(--arranca-text);
+}
+
+.input-readable:focus {
+  border-color: rgba(250, 204, 21, 0.7);
+  box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.14);
+}
+
+.label-readable {
+  color: var(--arranca-text-muted);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75);
+}
+
+.hero-readable {
+  color: var(--arranca-text);
+  text-shadow:
+    0 2px 2px rgba(0, 0, 0, 0.92),
+    0 5px 18px rgba(0, 0, 0, 0.68);
 }
 
 /* Oculta el spinner de número en inputs tipo PIN */

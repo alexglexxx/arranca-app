@@ -10,7 +10,7 @@ import {
 } from 'firebase/auth';
 import { fetchEstadoUsuario } from '@/lib/auth-client';
 import { auth } from '@/lib/firebase';
-import { BrandHeader, Button, Field } from '@/components/ui';
+import { Button, Field } from '@/components/ui';
 
 function normalizarTelefono(telefono: string): string {
   const limpio = telefono.replace(/[\s\-()]/g, '');
@@ -148,15 +148,14 @@ function RegistroForm() {
   }
 
   return (
-    <div className="max-w-md mx-auto px-6 pt-8 pb-10 min-h-screen flex flex-col">
-      <BrandHeader />
+    <div className="max-w-md mx-auto px-6 pt-20 pb-10 min-h-screen flex flex-col">
 
-      <h1 className="font-display text-[28px] font-semibold leading-[1.15] -tracking-wide mb-2">
+      <h1 className="font-display text-[28px] font-semibold leading-[1.15] -tracking-wide mb-2 text-on-dark text-soft-outline">
         Gasolina para
         <br />
         seguir trabajando
       </h1>
-      <p className="text-textDim text-[14.5px] leading-relaxed mb-7">
+      <p className="text-on-dark-muted text-[14.5px] leading-relaxed mb-7">
         $200 hoy, sin vueltas. Pagas cuando ya facturaste el día.
       </p>
 

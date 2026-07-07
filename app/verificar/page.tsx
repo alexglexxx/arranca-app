@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ConfirmationResult } from 'firebase/auth';
 import { getBearerHeaders } from '@/lib/auth-client';
-import { BrandHeader, Button } from '@/components/ui';
+import { Button } from '@/components/ui';
 
 const DURACION_REENVIO_SEG = 45;
 
@@ -103,15 +103,14 @@ export default function VerificarPage() {
   }
 
   return (
-    <div className="max-w-md mx-auto px-6 pt-8 pb-10 min-h-screen flex flex-col">
-      <BrandHeader />
+    <div className="max-w-md mx-auto px-6 pt-20 pb-10 min-h-screen flex flex-col">
 
-      <h1 className="font-display text-[28px] font-semibold leading-[1.15] -tracking-wide mb-2">
+      <h1 className="font-display text-[28px] font-semibold leading-[1.15] -tracking-wide mb-2 text-on-dark text-soft-outline">
         Revisa tus
         <br />
         mensajes SMS
       </h1>
-      <p className="text-textDim text-[14.5px] leading-relaxed mb-7">
+      <p className="text-on-dark-muted text-[14.5px] leading-relaxed mb-7">
         Te mandamos un código a <strong className="text-text">{telefono}</strong>. Escríbelo
         abajo.
       </p>
@@ -130,7 +129,7 @@ export default function VerificarPage() {
             onChange={(e) => handleDigitoChange(i, e.target.value)}
             onKeyDown={(e) => handleKeyDown(i, e)}
             autoFocus={i === 0}
-            className={`w-11 h-14 flex-shrink-0 bg-surface border-2 rounded-[14px] flex items-center justify-center font-mono text-xl font-bold text-center outline-none transition-colors ${
+            className={`input-readable w-11 h-14 flex-shrink-0 rounded-[14px] flex items-center justify-center font-mono text-xl font-bold text-center outline-none transition-colors ${
               digito ? 'border-amber text-amber' : 'border-border text-text'
             }`}
           />

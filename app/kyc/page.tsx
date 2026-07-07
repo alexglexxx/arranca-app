@@ -129,13 +129,13 @@ function KycForm() {
   }
 
   return (
-    <div className="max-w-md mx-auto px-6 pt-8 pb-10 min-h-screen flex flex-col">
-      <h1 className="font-display text-[28px] font-semibold leading-[1.15] -tracking-wide mb-2">
+    <div className="max-w-md mx-auto px-6 pt-20 pb-10 min-h-screen flex flex-col">
+      <h1 className="font-display text-[28px] font-semibold leading-[1.15] -tracking-wide mb-2 text-on-dark text-soft-outline">
         Solo una vez,
         <br />
         te lo prometemos
       </h1>
-      <p className="text-textDim text-[14.5px] leading-relaxed mb-7">
+      <p className="text-on-dark-muted text-[14.5px] leading-relaxed mb-7">
         Esto nos protege a los dos. Tarda 2 minutos.
       </p>
 
@@ -156,7 +156,7 @@ function KycForm() {
         onChange={(e) => setTarjetaCirculacion(e.target.files?.[0] || null)}
       />
 
-      <p className="text-[14.5px] font-bold text-textDim uppercase tracking-wider mb-2.5">
+      <p className="text-[14.5px] font-bold text-on-dark-muted uppercase tracking-wider mb-2.5">
         Tu identidad
       </p>
       <UploadBox
@@ -182,7 +182,7 @@ function KycForm() {
         onChange={(e) => setCapturaPerfil(e.target.files?.[0] || null)}
       />
 
-      <p className="text-[14.5px] font-bold text-textDim uppercase tracking-wider mb-2.5 mt-2">
+      <p className="text-[14.5px] font-bold text-on-dark-muted uppercase tracking-wider mb-2.5 mt-2">
         Tu actividad
       </p>
       <UploadBox
@@ -196,8 +196,8 @@ function KycForm() {
         onClick={() => inputCapturaPerfilRef.current?.click()}
       />
 
-      <div className="bg-transparent border border-dashed border-border rounded-card p-[18px] mb-3.5">
-        <p className="text-[14px] text-textDim leading-relaxed">
+      <div className="card-readable border-dashed rounded-card p-[18px] mb-3.5">
+        <p className="text-[14px] text-on-dark-muted leading-relaxed">
           <strong className="text-text">Tip:</strong> que se vea tu nombre y tu estatus de
           conectado/disponible. Para tomar captura: botón de encendido + bajar volumen al
           mismo tiempo.

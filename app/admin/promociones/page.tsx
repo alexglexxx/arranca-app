@@ -213,7 +213,7 @@ export default function AdminPromocionesPage() {
         <form onSubmit={crearPromocion} className="space-y-3">
           <h2 className="font-semibold text-[16px]">Crear promoción</h2>
           <input
-            className="w-full rounded-[14px] border border-border bg-[#17110A] px-3 py-3 text-sm text-text outline-none"
+            className="input-readable w-full rounded-[14px] px-3 py-3 text-sm outline-none"
             value={form.nombre}
             onChange={(event) => setForm({ ...form, nombre: event.target.value })}
             placeholder="Nombre"
@@ -239,7 +239,7 @@ export default function AdminPromocionesPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             <input
-              className="w-full rounded-[14px] border border-border bg-[#17110A] px-3 py-3 text-sm text-text outline-none"
+              className="input-readable w-full rounded-[14px] px-3 py-3 text-sm outline-none"
               value={form.recompensaCantidad}
               onChange={(event) => setForm({ ...form, recompensaCantidad: event.target.value })}
               inputMode="numeric"
@@ -254,7 +254,7 @@ export default function AdminPromocionesPage() {
               options={['dinero', 'unidades', 'ilimitado']}
             />
             <input
-              className="w-full rounded-[14px] border border-border bg-[#17110A] px-3 py-3 text-sm text-text outline-none disabled:opacity-50"
+              className="input-readable w-full rounded-[14px] px-3 py-3 text-sm outline-none disabled:opacity-70 disabled:saturate-50"
               value={form.presupuestoTotal}
               onChange={(event) => setForm({ ...form, presupuestoTotal: event.target.value })}
               inputMode="numeric"
@@ -264,7 +264,7 @@ export default function AdminPromocionesPage() {
           </div>
 
           <input
-            className="w-full rounded-[14px] border border-border bg-[#17110A] px-3 py-3 text-sm text-text outline-none"
+            className="input-readable w-full rounded-[14px] px-3 py-3 text-sm outline-none"
             value={form.limitePorUsuario}
             onChange={(event) => setForm({ ...form, limitePorUsuario: event.target.value })}
             inputMode="numeric"
@@ -274,7 +274,7 @@ export default function AdminPromocionesPage() {
           <button
             type="submit"
             disabled={procesandoId === 'crear'}
-            className="w-full rounded-[14px] bg-amber px-4 py-3 text-sm font-bold text-[#1A1304] disabled:opacity-50"
+            className="button-readable w-full rounded-[14px] px-4 py-3 text-sm font-bold disabled:opacity-70 disabled:saturate-50"
           >
             {procesandoId === 'crear' ? 'Creando...' : 'Crear pausada'}
           </button>
@@ -385,7 +385,7 @@ function Select({
 }) {
   return (
     <select
-      className="w-full rounded-[14px] border border-border bg-[#17110A] px-3 py-3 text-sm text-text outline-none"
+      className="input-readable w-full rounded-[14px] px-3 py-3 text-sm outline-none"
       value={value}
       onChange={(event) => onChange(event.target.value)}
     >
@@ -400,7 +400,7 @@ function Select({
 
 function Metric({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="min-w-0 rounded-[12px] border border-border bg-[#17110A] p-3">
+    <div className="card-dark-readable min-w-0 rounded-[12px] p-3">
       <p className="text-[11px] text-textDim">{label}</p>
       <p className="mt-1 break-words font-mono text-sm font-semibold text-text">{value}</p>
     </div>
@@ -421,7 +421,7 @@ function ActionButton({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className="rounded-[12px] border border-border px-3 py-2 text-sm font-semibold text-textDim disabled:opacity-40"
+      className="rounded-[12px] border border-border bg-surface px-3 py-2 text-sm font-semibold text-on-dark-muted disabled:opacity-70 disabled:saturate-50"
     >
       {children}
     </button>

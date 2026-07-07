@@ -39,7 +39,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
             type="button"
             onClick={cerrarSesion}
             disabled={cerrandoSesion}
-            className="shrink-0 rounded-[14px] border border-border px-3.5 py-2 text-[13px] font-semibold text-text transition-colors active:scale-[0.98] disabled:opacity-50"
+            className="shrink-0 rounded-[14px] border border-border bg-surface px-3.5 py-2 text-[13px] font-semibold text-on-dark transition-colors active:scale-[0.98] disabled:opacity-70 disabled:saturate-50"
           >
             {cerrandoSesion ? 'Cerrando...' : 'Cerrar sesión'}
           </button>

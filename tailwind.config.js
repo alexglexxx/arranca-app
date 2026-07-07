@@ -7,17 +7,17 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        bg: '#0B0F14',
-        surface: '#141A22',
-        surface2: '#1B232D',
-        amber: '#F4A623',
-        amberDim: '#4A3A1C',
-        green: '#3DD68C',
-        greenDim: '#16332A',
-        text: '#E8EBEF',
-        textDim: '#6B7684',
-        border: '#232C37',
-        danger: '#E5594B',
+        bg: 'var(--arranca-bg)',
+        surface: 'rgba(15, 23, 42, 0.78)',
+        surface2: 'rgba(30, 41, 59, 0.92)',
+        amber: 'var(--arranca-accent)',
+        amberDim: 'rgba(250, 204, 21, 0.14)',
+        green: 'var(--arranca-success)',
+        greenDim: 'rgba(34, 197, 94, 0.16)',
+        text: 'var(--arranca-text)',
+        textDim: 'var(--arranca-text-muted)',
+        border: 'var(--arranca-border)',
+        danger: 'var(--arranca-danger)',
       },
       fontFamily: {
         display: ['Space Grotesk', 'sans-serif'],

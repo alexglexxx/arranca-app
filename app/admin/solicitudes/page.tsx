@@ -254,7 +254,7 @@ export default function AdminSolicitudesPage() {
               )}
 
               {(solicitud.estado === 'aprobada' || solicitud.estado === 'vencida') && (
-                <div className="rounded-[16px] border border-border bg-[#17110A] p-4">
+                <div className="card-dark-readable rounded-[16px] p-4">
                   <p className="text-[14.5px] font-semibold mb-2">Adeudo actual</p>
                   <p className="text-[13.5px] text-textDim leading-relaxed">
                     Monto recibido {formatCurrency(solicitud.monto)} · Comision{' '}
@@ -264,7 +264,7 @@ export default function AdminSolicitudesPage() {
                 </div>
               )}
 
-              <div className="rounded-[16px] border border-border bg-[#17110A] p-4">
+              <div className="card-dark-readable rounded-[16px] p-4">
                 <p className="text-[14.5px] font-semibold mb-2">Historial del usuario</p>
                 <p className="text-[13.5px] text-textDim">
                   {solicitud.historialUsuario.totalSolicitudes} solicitudes anteriores
@@ -342,7 +342,7 @@ export default function AdminSolicitudesPage() {
               )}
 
               {solicitud.bitacoraAdmin && solicitud.bitacoraAdmin.length > 0 && (
-                <div className="rounded-[16px] border border-border bg-[#17110A] p-4">
+                <div className="card-dark-readable rounded-[16px] p-4">
                   <p className="text-[14.5px] font-semibold mb-2">Bitacora admin</p>
                   <div className="space-y-2">
                     {solicitud.bitacoraAdmin.slice(0, 4).map((evento, index) => (
@@ -368,7 +368,7 @@ export default function AdminSolicitudesPage() {
                     type="button"
                     disabled={procesandoId === solicitud.id}
                     onClick={() => ejecutarAccion(solicitud.id, accion.id)}
-                    className={`px-3 py-2 rounded-[12px] text-sm font-semibold border transition-colors disabled:opacity-50 ${accion.className}`}
+                    className={`px-3 py-2 rounded-[12px] text-sm font-semibold border transition-colors disabled:opacity-70 disabled:saturate-50 ${accion.className}`}
                   >
                     {procesandoId === solicitud.id ? 'Procesando...' : accion.label}
                   </button>
@@ -472,7 +472,7 @@ function ResumenFinancieroAdmin({
           {metricasPromociones.map((metrica) => (
             <div
               key={metrica.label}
-              className="min-w-0 rounded-[14px] border border-border bg-[#17110A] p-3"
+              className="card-dark-readable min-w-0 rounded-[14px] p-3"
             >
               <p className="text-[11px] leading-tight text-textDim">{metrica.label}</p>
               <p className="font-mono text-[16px] font-bold leading-tight text-text mt-1">
@@ -486,7 +486,7 @@ function ResumenFinancieroAdmin({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         <Link
           href="/admin/referidos"
-          className="inline-flex w-full items-center justify-center rounded-[14px] border border-border bg-[#17110A] px-4 py-3 text-center text-sm font-semibold text-text transition-colors active:scale-[0.99]"
+          className="card-dark-readable inline-flex w-full items-center justify-center rounded-[14px] px-4 py-3 text-center text-sm font-semibold text-on-dark transition-colors active:scale-[0.99]"
         >
           Ver y pagar bonos de referidos
         </Link>
@@ -507,14 +507,14 @@ function accionesPorEstado(solicitud: SolicitudAdminItem) {
   const eliminarAction: { id: AdminAction; label: string; className: string } = {
     id: 'eliminar',
     label: 'Eliminar',
-    className: 'border-danger/40 text-danger',
+    className: 'border-danger/50 bg-danger/10 text-danger',
   };
 
   switch (solicitud.estado) {
     case 'pendiente':
       acciones.push(
-        { id: 'aprobar', label: 'Aprobar', className: 'border-green/40 text-green' },
-        { id: 'rechazar', label: 'Rechazar', className: 'border-danger/40 text-danger' },
+        { id: 'aprobar', label: 'Aprobar', className: 'border-green/50 bg-greenDim/30 text-green' },
+        { id: 'rechazar', label: 'Rechazar', className: 'border-danger/50 bg-danger/10 text-danger' },
         eliminarAction
       );
       break;
@@ -524,19 +524,19 @@ function accionesPorEstado(solicitud: SolicitudAdminItem) {
           {
             id: 'validar_pago_reportado',
             label: 'Validar pago',
-            className: 'border-green/40 text-green',
+            className: 'border-green/50 bg-greenDim/30 text-green',
           },
           {
             id: 'rechazar_comprobante',
             label: 'Rechazar comprobante',
-            className: 'border-danger/40 text-danger',
+            className: 'border-danger/50 bg-danger/10 text-danger',
           },
           eliminarAction
         );
       } else {
         acciones.push(
-          { id: 'marcar_pagada', label: 'Marcar pagada', className: 'border-green/40 text-green' },
-          { id: 'marcar_vencida', label: 'Marcar vencida', className: 'border-danger/40 text-danger' },
+          { id: 'marcar_pagada', label: 'Marcar pagada', className: 'border-green/50 bg-greenDim/30 text-green' },
+          { id: 'marcar_vencida', label: 'Marcar vencida', className: 'border-danger/50 bg-danger/10 text-danger' },
           eliminarAction
         );
       }
@@ -547,18 +547,18 @@ function accionesPorEstado(solicitud: SolicitudAdminItem) {
           {
             id: 'validar_pago_reportado',
             label: 'Validar pago',
-            className: 'border-green/40 text-green',
+            className: 'border-green/50 bg-greenDim/30 text-green',
           },
           {
             id: 'rechazar_comprobante',
             label: 'Rechazar comprobante',
-            className: 'border-danger/40 text-danger',
+            className: 'border-danger/50 bg-danger/10 text-danger',
           },
           eliminarAction
         );
       } else {
         acciones.push(
-          { id: 'marcar_pagada', label: 'Marcar pagada', className: 'border-green/40 text-green' },
+          { id: 'marcar_pagada', label: 'Marcar pagada', className: 'border-green/50 bg-greenDim/30 text-green' },
           eliminarAction
         );
       }

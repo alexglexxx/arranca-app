@@ -6,7 +6,7 @@ import { onAuthStateChanged, type User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { fetchEstadoUsuario, getBearerHeaders } from '@/lib/auth-client';
 import { DevResetSolicitudButton } from '@/components/DevResetSolicitudButton';
-import { BrandHeader, Button, Card, CardRow, Field } from '@/components/ui';
+import { Button, Card, CardRow, Field } from '@/components/ui';
 import { obtenerResumenImpulsoBase } from '@/types';
 import type {
   EstadoSolicitudAdelanto,
@@ -214,13 +214,12 @@ export default function SolicitudPage() {
   const estado = solicitud?.estado || null;
 
   return (
-    <div className="max-w-md mx-auto px-6 pt-[calc(env(safe-area-inset-top)+2rem)] pb-10 min-h-screen flex flex-col">
-      <BrandHeader />
+    <div className="max-w-md mx-auto px-6 pt-[calc(env(safe-area-inset-top)+5rem)] pb-10 min-h-screen flex flex-col">
 
-      <h1 className="font-display text-[28px] font-semibold leading-[1.15] -tracking-wide mb-2">
+      <h1 className="font-display text-[28px] font-semibold leading-[1.15] -tracking-wide mb-2 text-on-dark text-soft-outline">
         Impulso para gasolina
       </h1>
-      <p className="text-textDim text-[14.5px] leading-relaxed mb-6">
+      <p className="text-on-dark-muted text-[14.5px] leading-relaxed mb-6">
         Solicita {formatCurrency(RESUMEN_IMPULSO.monto)} hoy. Si se aprueba, depositando el mismo dia liquidaras{' '}
         {formatCurrency(RESUMEN_IMPULSO.totalAPagar)}.
       </p>
@@ -259,11 +258,11 @@ export default function SolicitudPage() {
                 />
 
                 <div className="mb-4">
-                  <label className="block text-[14.5px] text-textDim mb-2 font-semibold">
+                  <label className="label-readable block text-[14.5px] mb-2 font-semibold">
                     Metodo de pago
                   </label>
                   <select
-                    className="w-full bg-surface border-2 border-border rounded-[16px] px-4 py-[16px] text-text text-base outline-none focus:border-amber transition-colors"
+                    className="input-readable w-full rounded-[16px] px-4 py-[16px] text-base outline-none transition-colors"
                     value={form.metodoReportado}
                     onChange={(event) =>
                       setForm((prev) => ({
@@ -287,11 +286,11 @@ export default function SolicitudPage() {
                 />
 
                 <div className="mb-4">
-                  <label className="block text-[14.5px] text-textDim mb-2 font-semibold">
+                  <label className="label-readable block text-[14.5px] mb-2 font-semibold">
                     Nota opcional
                   </label>
                   <textarea
-                    className="w-full min-h-[112px] bg-surface border-2 border-border rounded-[16px] px-4 py-[16px] text-text text-base outline-none focus:border-amber transition-colors"
+                    className="input-readable w-full min-h-[112px] rounded-[16px] px-4 py-[16px] text-base outline-none transition-colors"
                     value={form.notaUsuario}
                     onChange={(event) =>
                       setForm((prev) => ({ ...prev, notaUsuario: event.target.value }))

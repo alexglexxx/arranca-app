@@ -10,7 +10,7 @@ import {
 } from 'firebase/auth';
 import { fetchEstadoUsuario } from '@/lib/auth-client';
 import { auth } from '@/lib/firebase';
-import { BrandHeader, Button, Field } from '@/components/ui';
+import { Button, Field } from '@/components/ui';
 
 function normalizarTelefono(telefono: string): string {
   const limpio = telefono.replace(/[\s\-()]/g, '');
@@ -142,17 +142,15 @@ export default function IngresarPage() {
   }
 
   return (
-    <div className="max-w-md mx-auto px-6 pt-8 pb-10 min-h-screen flex flex-col">
+    <div className="max-w-md mx-auto px-6 pt-20 pb-10 min-h-screen flex flex-col">
 
-      <BrandHeader />
-
-      <h1 className="font-display text-[28px] font-semibold leading-[1.15] mb-2">
+      <h1 className="font-display text-[28px] font-semibold leading-[1.15] mb-2 text-on-dark text-soft-outline">
         Bienvenido
         <br />
         de nuevo
       </h1>
 
-      <p className="text-textDim text-[14.5px] leading-relaxed mb-7">
+      <p className="text-on-dark-muted text-[14.5px] leading-relaxed mb-7">
         Escribe el número con el que te registraste.
       </p>
 
