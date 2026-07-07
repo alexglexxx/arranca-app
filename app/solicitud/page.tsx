@@ -7,6 +7,7 @@ import { auth } from '@/lib/firebase';
 import { fetchEstadoUsuario, getBearerHeaders } from '@/lib/auth-client';
 import { DevResetSolicitudButton } from '@/components/DevResetSolicitudButton';
 import { BrandHeader, Button, Card, CardRow, Field } from '@/components/ui';
+import { obtenerResumenImpulsoBase } from '@/types';
 import type {
   EstadoSolicitudAdelanto,
   HistorialSolicitudResumen,
@@ -33,8 +34,10 @@ type FormState = {
   notaUsuario: string;
 };
 
+const RESUMEN_IMPULSO = obtenerResumenImpulsoBase();
+
 const INITIAL_FORM: FormState = {
-  montoReportado: '210',
+  montoReportado: String(RESUMEN_IMPULSO.totalAPagar),
   metodoReportado: 'transferencia',
   referencia: '',
   notaUsuario: '',
@@ -127,6 +130,7 @@ export default function SolicitudPage() {
     setSolicitud(actualData.solicitud);
     setPuedeSolicitar(actualData.puedeSolicitar);
     setHistorial(historialData.historial || []);
+    setError(null);
     setCargando(false);
   }
 
@@ -210,20 +214,24 @@ export default function SolicitudPage() {
   const estado = solicitud?.estado || null;
 
   return (
-    <div className="max-w-md mx-auto px-6 pt-8 pb-10 min-h-screen flex flex-col">
+    <div className="max-w-md mx-auto px-6 pt-[calc(env(safe-area-inset-top)+2rem)] pb-10 min-h-screen flex flex-col">
       <BrandHeader />
 
       <h1 className="font-display text-[28px] font-semibold leading-[1.15] -tracking-wide mb-2">
-        Adelanto de gasolina
+        Impulso para gasolina
       </h1>
       <p className="text-textDim text-[14.5px] leading-relaxed mb-6">
-        Solicita $200 hoy. Si se aprueba, liquidaras $210 en pago manual.
+        Solicita {formatCurrency(RESUMEN_IMPULSO.monto)} hoy. Si se aprueba, depositando el mismo dia liquidaras{' '}
+        {formatCurrency(RESUMEN_IMPULSO.totalAPagar)}.
       </p>
 
       <Card>
-        <CardRow label="Monto recibido" value={formatCurrency(200)} valueClassName="font-mono text-amber" />
-        <CardRow label="Comision" value={formatCurrency(10)} valueClassName="font-mono" />
-        <CardRow label="Total a pagar" value={formatCurrency(210)} valueClassName="font-mono" />
+        <ResumenCobrosRows
+          monto={RESUMEN_IMPULSO.monto}
+          comisionMonto={RESUMEN_IMPULSO.comisionMonto}
+          ivaMonto={RESUMEN_IMPULSO.ivaMonto}
+          totalAPagar={RESUMEN_IMPULSO.totalAPagar}
+        />
       </Card>
 
       {renderEstadoCard(estado, solicitud)}
@@ -317,7 +325,7 @@ export default function SolicitudPage() {
       <div className="mt-auto pt-2">
         {puedeSolicitar ? (
           <Button onClick={handleCrearSolicitud} disabled={creando}>
-            {creando ? 'Creando solicitud...' : 'Solicitar adelanto de gasolina de $200'}
+            {creando ? 'Creando solicitud...' : 'Solicitar impulso'}
           </Button>
         ) : (
           <Button disabled>
@@ -330,13 +338,38 @@ export default function SolicitudPage() {
   );
 }
 
+function ResumenCobrosRows({
+  monto,
+  comisionMonto,
+  ivaMonto = 0,
+  totalAPagar,
+}: {
+  monto: number;
+  comisionMonto: number;
+  ivaMonto?: number;
+  totalAPagar: number;
+}) {
+  return (
+    <>
+      <CardRow label="Monto recibido" value={formatCurrency(monto)} valueClassName="font-mono text-amber" />
+      <CardRow label="Comision" value={formatCurrency(comisionMonto)} valueClassName="font-mono" />
+      {ivaMonto > 0 && (
+        <CardRow label="IVA" value={formatCurrency(ivaMonto)} valueClassName="font-mono" />
+      )}
+      <CardRow label="Total a pagar" value={formatCurrency(totalAPagar)} valueClassName="font-mono" />
+    </>
+  );
+}
+
 function AdeudoCard({ solicitud }: { solicitud: SolicitudAdelanto }) {
   return (
     <Card className={solicitud.estado === 'vencida' ? 'border-danger/30' : ''}>
-      <p className="text-[15px] font-semibold mb-3">Tu adelanto de gasolina</p>
-      <CardRow label="Monto recibido" value={formatCurrency(solicitud.monto)} valueClassName="font-mono text-amber" />
-      <CardRow label="Comision" value={formatCurrency(solicitud.comisionMonto)} valueClassName="font-mono" />
-      <CardRow label="Total a pagar" value={formatCurrency(solicitud.totalAPagar)} valueClassName="font-mono" />
+      <p className="text-[15px] font-semibold mb-3">Tu impulso para gasolina</p>
+      <ResumenCobrosRows
+        monto={solicitud.monto}
+        comisionMonto={solicitud.comisionMonto}
+        totalAPagar={solicitud.totalAPagar}
+      />
       <CardRow
         label="Estado"
         value={solicitud.estado === 'vencida' ? 'Pendiente de pago vencido' : 'Pendiente de pago'}
@@ -365,7 +398,7 @@ function InstruccionesPagoCard({ solicitud }: { solicitud: SolicitudAdelanto }) 
       )}
       <p className="text-[14.5px] text-textDim leading-relaxed mt-3">
         {instrucciones.nota ||
-          'Cuando realices tu pago, envia la referencia para validar tu adelanto.'}
+          'Cuando realices tu pago, envia la referencia para validar tu impulso.'}
       </p>
     </Card>
   );
@@ -383,7 +416,7 @@ function EstadoComprobanteCard({ solicitud }: { solicitud: SolicitudAdelanto }) 
       <Card className="border-amber/30">
         <p className="text-[15px] font-semibold mb-2">Tu comprobante esta en revision.</p>
         <p className="text-[14.5px] text-textDim leading-relaxed">
-          Cuando validemos tu pago, podras solicitar otro adelanto de gasolina.
+          Cuando validemos tu pago, podras solicitar otro impulso para gasolina.
         </p>
       </Card>
     );
@@ -408,7 +441,7 @@ function EstadoComprobanteCard({ solicitud }: { solicitud: SolicitudAdelanto }) 
       <Card className="border-green/30">
         <p className="text-[15px] font-semibold mb-2 text-green">Pago validado.</p>
         <p className="text-[14.5px] text-textDim leading-relaxed">
-          Ya puedes solicitar otro adelanto de gasolina.
+          Ya puedes solicitar otro impulso para gasolina.
         </p>
       </Card>
     );
@@ -454,7 +487,7 @@ function renderEstadoCard(
       <Card>
         <p className="text-[15px] font-semibold mb-2">Sin solicitud activa</p>
         <p className="text-[14.5px] text-textDim leading-relaxed">
-          Puedes crear una nueva solicitud de adelanto cuando quieras.
+          Puedes crear una nueva solicitud de impulso cuando quieras.
         </p>
       </Card>
     );
@@ -468,7 +501,7 @@ function renderEstadoCard(
         <Card>
           <p className="text-[15px] font-semibold mb-2">Tu solicitud esta en revision.</p>
           <p className="text-[14.5px] text-textDim leading-relaxed mb-3">
-            Estamos revisando tu adelanto de gasolina manualmente.
+            Estamos revisando tu impulso para gasolina.
           </p>
           <p className="text-xs text-textDim">Creada: {creadoEnTexto}</p>
         </Card>
@@ -476,7 +509,7 @@ function renderEstadoCard(
     case 'aprobada':
       return (
         <Card className="border-green/30">
-          <p className="text-[15px] font-semibold mb-2">Tu adelanto fue aprobado.</p>
+          <p className="text-[15px] font-semibold mb-2">Tu impulso fue aprobado.</p>
           <p className="text-[14.5px] text-textDim leading-relaxed">
             Tienes un pago pendiente. Revisa el total, las instrucciones y reporta tu comprobante.
           </p>
@@ -487,7 +520,7 @@ function renderEstadoCard(
         <Card className="border-green/30">
           <p className="text-[15px] font-semibold mb-2 text-green">Tu pago fue validado.</p>
           <p className="text-[14.5px] text-textDim leading-relaxed">
-            Ya puedes solicitar otro adelanto de gasolina.
+            Ya puedes solicitar otro impulso para gasolina.
           </p>
         </Card>
       );
@@ -512,7 +545,7 @@ function renderEstadoCard(
     case 'vencida':
       return (
         <Card className="border-danger/30">
-          <p className="text-[15px] font-semibold mb-2 text-danger">Tu adelanto esta vencido.</p>
+          <p className="text-[15px] font-semibold mb-2 text-danger">Tu impulso esta vencido.</p>
           <p className="text-[14.5px] text-textDim leading-relaxed">
             Tienes un pago pendiente. Liquida tu adeudo y reporta tu comprobante para revisarlo.
           </p>
@@ -544,7 +577,7 @@ function labelAccionBloqueada(
     case 'vencida':
       return 'Pago vencido pendiente';
     default:
-      return 'No disponible';
+      return 'Solicitar impulso';
   }
 }
 

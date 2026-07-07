@@ -362,6 +362,19 @@ export function calcularMontoConInteres(monto: number, tasa: number): number {
   return Math.round(monto * (1 + tasa));
 }
 
+export function obtenerResumenImpulsoBase() {
+  const monto = REGLAS_PRESTAMO.MONTO_BASE;
+  const totalAPagar = calcularMontoConInteres(monto, REGLAS_PRESTAMO.TASA_PAGO_MISMO_DIA);
+  const comisionMonto = totalAPagar - monto;
+
+  return {
+    monto,
+    comisionMonto,
+    ivaMonto: 0,
+    totalAPagar,
+  };
+}
+
 // Determina qué tasa aplica según cuándo se está pagando, comparando contra
 // la fecha de aprobación (para "mismo día") y la fecha límite (para
 // "a tiempo" vs "vencido"). Centraliza la lógica para que el backend

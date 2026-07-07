@@ -14,10 +14,14 @@ import type {
   SolicitudAdelanto,
   Usuario,
 } from '@/types';
-import { REGLAS_PRESTAMO } from '@/types';
+import { REGLAS_PRESTAMO, obtenerResumenImpulsoBase } from '@/types';
 
 const COLECCION_SOLICITUDES = 'prestamos';
 const ESTADOS_ACTIVOS_INTERNOS: EstadoPrestamo[] = ['pendiente_revision', 'aprobado', 'activo'];
+const ESTADOS_BLOQUEANTES_INTERNOS: EstadoPrestamo[] = [
+  ...ESTADOS_ACTIVOS_INTERNOS,
+  'mora',
+];
 const ESTADOS_ACTIVOS_NORMALIZADOS = new Set<EstadoSolicitudAdelanto>(['pendiente', 'aprobada']);
 const ESTADOS_RESOLUBLES_PARA_REINTENTO = new Set<EstadoSolicitudAdelanto>([
   'pagada',
@@ -26,10 +30,11 @@ const ESTADOS_RESOLUBLES_PARA_REINTENTO = new Set<EstadoSolicitudAdelanto>([
 ]);
 const BITACORA_MAX_EVENTOS = 12;
 
-const COMISION_PORCENTAJE = 5;
-const MONTO_BASE = 200;
-const COMISION_MONTO = Math.round((MONTO_BASE * COMISION_PORCENTAJE) / 100);
-const TOTAL_A_PAGAR = MONTO_BASE + COMISION_MONTO;
+const RESUMEN_IMPULSO = obtenerResumenImpulsoBase();
+const COMISION_PORCENTAJE = REGLAS_PRESTAMO.TASA_PAGO_MISMO_DIA * 100;
+const MONTO_BASE = RESUMEN_IMPULSO.monto;
+const COMISION_MONTO = RESUMEN_IMPULSO.comisionMonto;
+const TOTAL_A_PAGAR = RESUMEN_IMPULSO.totalAPagar;
 const PLAZO_MAXIMO_MS = REGLAS_PRESTAMO.DIAS_PLAZO_MAXIMO * 24 * 60 * 60 * 1000;
 
 export const INSTRUCCIONES_PAGO: InstruccionesPagoManual = {
@@ -38,7 +43,7 @@ export const INSTRUCCIONES_PAGO: InstruccionesPagoManual = {
   cuenta: 'CUENTA_PENDIENTE',
   clabe: 'CLABE_PENDIENTE',
   referencia: 'REFERENCIA_PENDIENTE',
-  nota: 'Cuando realices tu pago, envia la referencia para validar tu adelanto.',
+  nota: 'Cuando realices tu pago, envia la referencia para validar tu impulso.',
 };
 
 type AdminAction =
@@ -140,6 +145,32 @@ export async function obtenerSolicitudActualUsuario(uid: string): Promise<Solici
 
   const actual = ordenados[0];
   return actual ? normalizarSolicitud(actual.id, actual.data() as Prestamo) : null;
+}
+
+export async function obtenerSolicitudBloqueanteUsuario(
+  uid: string
+): Promise<SolicitudAdelanto | null> {
+  const snapshot = await adminDb
+    .collection(COLECCION_SOLICITUDES)
+    .where('usuarioId', '==', uid)
+    .where('estado', 'in', ESTADOS_BLOQUEANTES_INTERNOS)
+    .limit(20)
+    .get();
+
+  if (snapshot.empty) {
+    return null;
+  }
+
+  const ordenados = snapshot.docs.sort((a, b) => {
+    const dataA = a.data();
+    const dataB = b.data();
+    const tsA = Number(dataA.actualizadoEn || dataA.fechaSolicitud || 0);
+    const tsB = Number(dataB.actualizadoEn || dataB.fechaSolicitud || 0);
+    return tsB - tsA;
+  });
+
+  const actual = ordenados[0];
+  return normalizarSolicitud(actual.id, actual.data() as Prestamo);
 }
 
 export async function obtenerSolicitudPorId(id: string): Promise<SolicitudAdelanto | null> {

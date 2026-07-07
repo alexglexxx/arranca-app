@@ -6,13 +6,13 @@ import { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode } from 'react';
 
 export function BrandHeader() {
   return (
-    <div className="flex items-center gap-2 mb-7">
+    <div className="flex items-center gap-2.5 mb-8">
       <div className="w-[30px] h-[30px] rounded-lg bg-gradient-to-br from-amber to-[#C97E12] flex items-center justify-center flex-shrink-0">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#1A1304" strokeWidth="2.4" strokeLinecap="round">
           <path d="M3 12h18M14 5l7 7-7 7" />
         </svg>
       </div>
-      <div className="font-display font-semibold text-[15px] -tracking-tight">
+      <div className="font-display font-semibold text-[22px] leading-none whitespace-nowrap">
         arranca<span className="text-amber">.</span>
       </div>
     </div>
