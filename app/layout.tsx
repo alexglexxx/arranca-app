@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from 'next';
-import { AppBrand } from '@/components/AppBrand';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -28,7 +27,6 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className="min-h-screen bg-bg text-text font-body">
-        <AppBrand />
         {children}
       </body>
     </html>

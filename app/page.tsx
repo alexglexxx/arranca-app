@@ -14,7 +14,7 @@ const LOGIN_ROUTE = '/ingresar';
 function ArrancaLogo() {
   return (
     <div className="flex flex-col items-center">
-      <svg viewBox="0 0 320 260" aria-hidden="true" className="h-auto w-[15rem] sm:w-[18rem] md:w-[21rem]">
+      <svg viewBox="0 36 320 186" aria-hidden="true" className="h-auto w-[15rem] sm:w-[18rem] md:w-[21rem]">
         <path
           d="M92 214 L144 52 H176 L228 214 H190 L160 124 H158 L130 214 Z"
           fill="#FFC400"
@@ -27,7 +27,7 @@ function ArrancaLogo() {
         <rect x="149.5" y="180" width="21" height="34" rx="1.5" fill="#FFC400" />
       </svg>
 
-      <span className="text-outline mt-2 text-[1.75rem] font-extrabold uppercase tracking-[0.28em] text-on-dark sm:text-[2rem]">
+      <span className="text-outline mt-0 text-[1.75rem] font-extrabold uppercase tracking-[0.28em] text-on-dark sm:mt-2 sm:text-[2rem]">
         ARRANCA
       </span>
     </div>
@@ -115,10 +115,10 @@ export default function HomePage() {
     <main className="relative min-h-[100svh] overflow-x-hidden bg-bg text-on-dark">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_12%,rgba(250,204,21,0.14),transparent_28%),linear-gradient(180deg,#020617_0%,#07111F_48%,#020617_100%)]" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_78%,rgba(16,185,129,0.10),transparent_24%)]" />
-      <div className="relative mx-auto flex min-h-[100svh] w-full max-w-[24rem] flex-col items-center px-5 pb-4 pt-16 text-center sm:max-w-[26rem]">
+      <div className="relative mx-auto flex min-h-[100svh] w-full max-w-[24rem] flex-col items-center px-5 pb-4 pt-6 text-center sm:max-w-[26rem] sm:pt-8 md:pt-12">
         <ArrancaLogo />
 
-        <div className="mt-6 w-full">
+        <div className="mt-5 w-full sm:mt-6">
           <h1 className="hero-readable text-outline mx-auto max-w-[23rem] text-[clamp(2.15rem,8.2vw,4.8rem)] font-black leading-[0.95] text-on-dark">
             <span className="block whitespace-nowrap">
               Un <span style={{ color: ARRANCA_YELLOW }}>impulso</span> para
