@@ -30,6 +30,8 @@ export type EstadoSolicitudAdelanto =
   | 'pagada'
   | 'vencida';
 
+export type EstadoSolicitudActual = EstadoSolicitudAdelanto | 'sin_solicitud';
+
 export type MetodoPagoManual = 'transferencia' | 'efectivo' | 'otro';
 
 export type EstadoRevisionComprobante =
@@ -105,6 +107,7 @@ export interface Prestamo {
   comisionMonto?: number;
   totalAPagar?: number;
   montoSiPagaHoy: number; // monto * 1.05
+  montoSiPagaManana?: number; // monto * 1.10
   montoSiPagaFechaLimite: number; // monto * 1.15
   montoSiPagaVencido: number; // monto * 1.20 — aplica si ya pasó la fecha límite
   fechaSolicitud: number;
@@ -202,11 +205,24 @@ export interface SolicitudAdelanto {
   notaAdmin?: string | null;
   esPrueba?: boolean;
   fechaLimite?: number | null;
+  montoSiPagaHoy?: number;
+  montoSiPagaManana?: number;
+  montoSiPagaFechaLimite?: number;
+  montoSiPagaVencido?: number;
   rawEstado?: EstadoPrestamo;
   metodoPago?: MetodoPagoManual;
   instruccionesPago?: InstruccionesPagoManual;
   comprobante?: ComprobantePagoManual;
   bitacoraAdmin?: BitacoraAdminEvento[];
+}
+
+export interface SolicitudActualUsuarioResponse {
+  ok: true;
+  estado: EstadoSolicitudActual;
+  tieneSolicitud: boolean;
+  solicitud: SolicitudAdelanto | null;
+  puedeSolicitar: boolean;
+  mensaje: string;
 }
 
 export interface HistorialSolicitudResumen {
@@ -349,9 +365,10 @@ export interface EstadoUsuarioRouteInfo {
 export const REGLAS_PRESTAMO = {
   MONTO_BASE: 200,
   TASA_PAGO_MISMO_DIA: 0.05,
+  TASA_PAGO_DIA_SIGUIENTE: 0.10,
   TASA_PAGO_FECHA_LIMITE: 0.15,
   TASA_PAGO_VENCIDO: 0.20, // se aplica si paga después de la fecha límite, ya en mora
-  DIAS_PLAZO_MAXIMO: 2,
+  DIAS_PLAZO_MAXIMO: 3,
 } as const;
 
 export const REFERIDOS = {
@@ -364,14 +381,28 @@ export function calcularMontoConInteres(monto: number, tasa: number): number {
 
 export function obtenerResumenImpulsoBase() {
   const monto = REGLAS_PRESTAMO.MONTO_BASE;
-  const totalAPagar = calcularMontoConInteres(monto, REGLAS_PRESTAMO.TASA_PAGO_MISMO_DIA);
-  const comisionMonto = totalAPagar - monto;
+  const totalSiPagaHoy = calcularMontoConInteres(monto, REGLAS_PRESTAMO.TASA_PAGO_MISMO_DIA);
+  const totalSiPagaManana = calcularMontoConInteres(
+    monto,
+    REGLAS_PRESTAMO.TASA_PAGO_DIA_SIGUIENTE
+  );
+  const totalFechaLimite = calcularMontoConInteres(
+    monto,
+    REGLAS_PRESTAMO.TASA_PAGO_FECHA_LIMITE
+  );
+  const totalVencido = calcularMontoConInteres(monto, REGLAS_PRESTAMO.TASA_PAGO_VENCIDO);
+  const comisionMonto = totalSiPagaHoy - monto;
 
   return {
     monto,
     comisionMonto,
     ivaMonto: 0,
-    totalAPagar,
+    totalAPagar: totalSiPagaHoy,
+    totalSiPagaHoy,
+    totalSiPagaManana,
+    totalFechaLimite,
+    totalVencido,
+    diasPlazoMaximo: REGLAS_PRESTAMO.DIAS_PLAZO_MAXIMO,
   };
 }
 

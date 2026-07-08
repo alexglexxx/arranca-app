@@ -10,17 +10,12 @@ import { Button, Card, CardRow, Field } from '@/components/ui';
 import { obtenerResumenImpulsoBase } from '@/types';
 import type {
   EstadoSolicitudAdelanto,
+  EstadoSolicitudActual,
   HistorialSolicitudResumen,
   MetodoPagoManual,
   SolicitudAdelanto,
+  SolicitudActualUsuarioResponse,
 } from '@/types';
-
-type SolicitudActualResponse = {
-  ok: boolean;
-  tieneSolicitud: boolean;
-  solicitud: SolicitudAdelanto | null;
-  puedeSolicitar: boolean;
-};
 
 type HistorialResponse = {
   ok: boolean;
@@ -46,6 +41,7 @@ const INITIAL_FORM: FormState = {
 export default function SolicitudPage() {
   const router = useRouter();
   const [usuario, setUsuario] = useState<User | null>(null);
+  const [estadoActual, setEstadoActual] = useState<EstadoSolicitudActual>('sin_solicitud');
   const [solicitud, setSolicitud] = useState<SolicitudAdelanto | null>(null);
   const [historial, setHistorial] = useState<HistorialSolicitudResumen[]>([]);
   const [puedeSolicitar, setPuedeSolicitar] = useState(false);
@@ -105,33 +101,40 @@ export default function SolicitudPage() {
   }, [solicitud]);
 
   async function cargarDatos(user: User) {
-    const [actualResponse, historialResponse] = await Promise.all([
-      fetch('/api/solicitudes/actual', {
-        headers: await getBearerHeaders(user),
-        cache: 'no-store',
-      }),
-      fetch('/api/solicitudes/historial', {
-        headers: await getBearerHeaders(user),
-        cache: 'no-store',
-      }),
-    ]);
+    const actualResponse = await fetch('/api/solicitudes/actual', {
+      headers: await getBearerHeaders(user),
+      cache: 'no-store',
+    });
 
-    const actualData = (await actualResponse.json()) as SolicitudActualResponse;
-    const historialData = (await historialResponse.json()) as HistorialResponse;
+    const actualData = (await actualResponse.json()) as Partial<SolicitudActualUsuarioResponse>;
 
-    if (!actualResponse.ok) {
+    if (!actualResponse.ok || actualData.ok !== true || !actualData.estado) {
       throw new Error('No se pudo cargar la solicitud.');
     }
 
-    if (!historialResponse.ok) {
-      throw new Error('No se pudo cargar el historial.');
-    }
-
-    setSolicitud(actualData.solicitud);
-    setPuedeSolicitar(actualData.puedeSolicitar);
-    setHistorial(historialData.historial || []);
+    setEstadoActual(actualData.estado);
+    setSolicitud(actualData.solicitud || null);
+    setPuedeSolicitar(Boolean(actualData.puedeSolicitar));
     setError(null);
-    setCargando(false);
+
+    try {
+      const historialResponse = await fetch('/api/solicitudes/historial', {
+        headers: await getBearerHeaders(user),
+        cache: 'no-store',
+      });
+
+      const historialData = (await historialResponse.json()) as Partial<HistorialResponse>;
+
+      if (historialResponse.ok && historialData.ok === true) {
+        setHistorial(historialData.historial || []);
+      } else {
+        setHistorial([]);
+      }
+    } catch {
+      setHistorial([]);
+    } finally {
+      setCargando(false);
+    }
   }
 
   async function handleCrearSolicitud() {
@@ -211,7 +214,9 @@ export default function SolicitudPage() {
     );
   }
 
-  const estado = solicitud?.estado || null;
+  const estado: EstadoSolicitudActual = solicitud?.estado || estadoActual;
+  const estadoSolicitud: EstadoSolicitudAdelanto | null = solicitud?.estado || null;
+  const accionDeshabilitada = cargando || creando || !usuario || !puedeSolicitar;
 
   return (
     <div className="max-w-md mx-auto px-6 pt-[calc(env(safe-area-inset-top)+5rem)] pb-10 min-h-screen flex flex-col">
@@ -220,17 +225,12 @@ export default function SolicitudPage() {
         Impulso para gasolina
       </h1>
       <p className="text-on-dark-muted text-[14.5px] leading-relaxed mb-6">
-        Solicita {formatCurrency(RESUMEN_IMPULSO.monto)} hoy. Si se aprueba, depositando el mismo dia liquidaras{' '}
-        {formatCurrency(RESUMEN_IMPULSO.totalAPagar)}.
+        Solicita {formatCurrency(RESUMEN_IMPULSO.monto)} hoy. Si se aprueba, pagando hoy liquidas{' '}
+        {formatCurrency(RESUMEN_IMPULSO.totalSiPagaHoy)}.
       </p>
 
       <Card>
-        <ResumenCobrosRows
-          monto={RESUMEN_IMPULSO.monto}
-          comisionMonto={RESUMEN_IMPULSO.comisionMonto}
-          ivaMonto={RESUMEN_IMPULSO.ivaMonto}
-          totalAPagar={RESUMEN_IMPULSO.totalAPagar}
-        />
+        <ResumenCobrosRows solicitud={solicitud} />
       </Card>
 
       {renderEstadoCard(estado, solicitud)}
@@ -323,12 +323,12 @@ export default function SolicitudPage() {
 
       <div className="mt-auto pt-2">
         {puedeSolicitar ? (
-          <Button onClick={handleCrearSolicitud} disabled={creando}>
+          <Button onClick={handleCrearSolicitud} disabled={accionDeshabilitada}>
             {creando ? 'Creando solicitud...' : 'Solicitar impulso'}
           </Button>
         ) : (
           <Button disabled>
-            {labelAccionBloqueada(estado, solicitud)}
+            {labelAccionBloqueada(estadoSolicitud, solicitud)}
           </Button>
         )}
         <DevResetSolicitudButton />
@@ -337,25 +337,25 @@ export default function SolicitudPage() {
   );
 }
 
-function ResumenCobrosRows({
-  monto,
-  comisionMonto,
-  ivaMonto = 0,
-  totalAPagar,
-}: {
-  monto: number;
-  comisionMonto: number;
-  ivaMonto?: number;
-  totalAPagar: number;
-}) {
+function ResumenCobrosRows({ solicitud }: { solicitud?: SolicitudAdelanto | null }) {
+  const monto = solicitud?.monto || RESUMEN_IMPULSO.monto;
+  const totalSiPagaHoy =
+    solicitud?.montoSiPagaHoy || solicitud?.totalAPagar || RESUMEN_IMPULSO.totalSiPagaHoy;
+  const comisionMismoDia = solicitud?.comisionMonto || totalSiPagaHoy - monto;
+  const totalSiPagaManana = solicitud?.montoSiPagaManana || RESUMEN_IMPULSO.totalSiPagaManana;
+  const totalFechaLimite = solicitud?.montoSiPagaFechaLimite || RESUMEN_IMPULSO.totalFechaLimite;
+  const fechaLimiteTexto = solicitud?.fechaLimite
+    ? formatFechaCorta(solicitud.fechaLimite)
+    : `${RESUMEN_IMPULSO.diasPlazoMaximo} días`;
+
   return (
     <>
       <CardRow label="Monto recibido" value={formatCurrency(monto)} valueClassName="font-mono text-amber" />
-      <CardRow label="Comision" value={formatCurrency(comisionMonto)} valueClassName="font-mono" />
-      {ivaMonto > 0 && (
-        <CardRow label="IVA" value={formatCurrency(ivaMonto)} valueClassName="font-mono" />
-      )}
-      <CardRow label="Total a pagar" value={formatCurrency(totalAPagar)} valueClassName="font-mono" />
+      <CardRow label="Comisión mismo día" value={formatCurrency(comisionMismoDia)} valueClassName="font-mono" />
+      <CardRow label="Total si pagas hoy" value={formatCurrency(totalSiPagaHoy)} valueClassName="font-mono" />
+      <CardRow label="Total si pagas mañana" value={formatCurrency(totalSiPagaManana)} valueClassName="font-mono" />
+      <CardRow label="Total fecha límite" value={formatCurrency(totalFechaLimite)} valueClassName="font-mono" />
+      <CardRow label="Fecha límite" value={fechaLimiteTexto} />
     </>
   );
 }
@@ -364,18 +364,14 @@ function AdeudoCard({ solicitud }: { solicitud: SolicitudAdelanto }) {
   return (
     <Card className={solicitud.estado === 'vencida' ? 'border-danger/30' : ''}>
       <p className="text-[15px] font-semibold mb-3">Tu impulso para gasolina</p>
-      <ResumenCobrosRows
-        monto={solicitud.monto}
-        comisionMonto={solicitud.comisionMonto}
-        totalAPagar={solicitud.totalAPagar}
-      />
+      <ResumenCobrosRows solicitud={solicitud} />
       <CardRow
         label="Estado"
         value={solicitud.estado === 'vencida' ? 'Pendiente de pago vencido' : 'Pendiente de pago'}
       />
       {solicitud.fechaLimite && (
         <p className="text-xs text-textDim mt-3">
-          Fecha limite: {formatFecha(solicitud.fechaLimite)}
+          Fecha límite: {formatFecha(solicitud.fechaLimite)}
         </p>
       )}
     </Card>
@@ -455,7 +451,7 @@ function HistorialCard({ historial }: { historial: HistorialSolicitudResumen[] }
       <p className="text-[15px] font-semibold mb-3">Historial</p>
       {historial.length === 0 ? (
         <p className="text-[14.5px] text-textDim leading-relaxed">
-          Aun no tienes solicitudes registradas.
+          Aún no tienes solicitudes registradas.
         </p>
       ) : (
         <div className="space-y-3">
@@ -478,10 +474,10 @@ function HistorialCard({ historial }: { historial: HistorialSolicitudResumen[] }
 }
 
 function renderEstadoCard(
-  estado: EstadoSolicitudAdelanto | null,
+  estado: EstadoSolicitudActual,
   solicitud: SolicitudAdelanto | null
 ) {
-  if (!estado || !solicitud) {
+  if (estado === 'sin_solicitud' || !solicitud) {
     return (
       <Card>
         <p className="text-[15px] font-semibold mb-2">Sin solicitud activa</p>

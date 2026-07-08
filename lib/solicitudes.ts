@@ -35,6 +35,9 @@ const COMISION_PORCENTAJE = REGLAS_PRESTAMO.TASA_PAGO_MISMO_DIA * 100;
 const MONTO_BASE = RESUMEN_IMPULSO.monto;
 const COMISION_MONTO = RESUMEN_IMPULSO.comisionMonto;
 const TOTAL_A_PAGAR = RESUMEN_IMPULSO.totalAPagar;
+const TOTAL_PAGO_MANANA = RESUMEN_IMPULSO.totalSiPagaManana;
+const TOTAL_FECHA_LIMITE = RESUMEN_IMPULSO.totalFechaLimite;
+const TOTAL_VENCIDO = RESUMEN_IMPULSO.totalVencido;
 const PLAZO_MAXIMO_MS = REGLAS_PRESTAMO.DIAS_PLAZO_MAXIMO * 24 * 60 * 60 * 1000;
 
 export const INSTRUCCIONES_PAGO: InstruccionesPagoManual = {
@@ -88,6 +91,11 @@ export function getSolicitudMontoConfig() {
     comisionPorcentaje: COMISION_PORCENTAJE,
     comisionMonto: COMISION_MONTO,
     totalAPagar: TOTAL_A_PAGAR,
+    totalSiPagaHoy: TOTAL_A_PAGAR,
+    totalSiPagaManana: TOTAL_PAGO_MANANA,
+    totalFechaLimite: TOTAL_FECHA_LIMITE,
+    totalVencido: TOTAL_VENCIDO,
+    diasPlazoMaximo: REGLAS_PRESTAMO.DIAS_PLAZO_MAXIMO,
   };
 }
 
@@ -190,21 +198,21 @@ export async function listarHistorialSolicitudesUsuario(
   const snapshot = await adminDb
     .collection(COLECCION_SOLICITUDES)
     .where('usuarioId', '==', uid)
-    .orderBy('fechaSolicitud', 'desc')
     .limit(limit)
     .get();
 
-  return snapshot.docs.map((doc) => {
-    const solicitud = normalizarSolicitud(doc.id, doc.data() as Prestamo);
-    return {
+  return snapshot.docs
+    .map((doc) => normalizarSolicitud(doc.id, doc.data() as Prestamo))
+    .sort((a, b) => b.creadoEn - a.creadoEn)
+    .slice(0, limit)
+    .map((solicitud) => ({
       id: solicitud.id,
       fecha: solicitud.creadoEn,
       monto: solicitud.monto,
       totalAPagar: solicitud.totalAPagar,
       estado: solicitud.estado,
       pagadoEn: solicitud.pagadoEn || null,
-    };
-  });
+    }));
 }
 
 export async function crearSolicitudParaUsuario(uid: string): Promise<SolicitudAdelanto> {
@@ -239,8 +247,9 @@ export async function crearSolicitudParaUsuario(uid: string): Promise<SolicitudA
     comisionMonto: COMISION_MONTO,
     totalAPagar: TOTAL_A_PAGAR,
     montoSiPagaHoy: TOTAL_A_PAGAR,
-    montoSiPagaFechaLimite: TOTAL_A_PAGAR,
-    montoSiPagaVencido: TOTAL_A_PAGAR,
+    montoSiPagaManana: TOTAL_PAGO_MANANA,
+    montoSiPagaFechaLimite: TOTAL_FECHA_LIMITE,
+    montoSiPagaVencido: TOTAL_VENCIDO,
     fechaSolicitud: ahora,
     actualizadoEn: ahora,
     fechaAprobacion: null,
@@ -683,6 +692,10 @@ function normalizarSolicitud(id: string, data: Prestamo): SolicitudAdelanto {
     notaAdmin: data.notaAdmin || data.notasAdmin || null,
     esPrueba: Boolean(data.esPrueba),
     fechaLimite: data.fechaLimite || null,
+    montoSiPagaHoy: Number(data.montoSiPagaHoy || data.totalAPagar || TOTAL_A_PAGAR),
+    montoSiPagaManana: Number(data.montoSiPagaManana || TOTAL_PAGO_MANANA),
+    montoSiPagaFechaLimite: Number(data.montoSiPagaFechaLimite || TOTAL_FECHA_LIMITE),
+    montoSiPagaVencido: Number(data.montoSiPagaVencido || TOTAL_VENCIDO),
     rawEstado: data.estado,
     metodoPago: data.metodoPago || 'transferencia',
     instruccionesPago: data.instruccionesPago || { ...INSTRUCCIONES_PAGO },

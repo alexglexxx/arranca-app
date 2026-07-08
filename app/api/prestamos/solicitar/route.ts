@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { assertSameUser, errorResponse, requireUser } from '@/lib/auth';
 import { adminDb } from '@/lib/firebase-admin';
 import { Prestamo, CuestionarioSolicitud } from '@/types';
-import { REGLAS_PRESTAMO, calcularMontoConInteres } from '@/types';
+import { obtenerResumenImpulsoBase } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -105,18 +105,18 @@ export async function POST(request: NextRequest) {
       usuario.nombre &&
       !nombreSimilar(usuario.nombre, nombreTitularCuenta);
 
-    const monto = REGLAS_PRESTAMO.MONTO_BASE;
-    const montoSiPagaHoy = calcularMontoConInteres(monto, REGLAS_PRESTAMO.TASA_PAGO_MISMO_DIA);
-    const montoSiPagaFechaLimite = calcularMontoConInteres(
-      monto,
-      REGLAS_PRESTAMO.TASA_PAGO_FECHA_LIMITE
-    );
-    const montoSiPagaVencido = calcularMontoConInteres(monto, REGLAS_PRESTAMO.TASA_PAGO_VENCIDO);
+    const resumenImpulso = obtenerResumenImpulsoBase();
+    const monto = resumenImpulso.monto;
+    const montoSiPagaHoy = resumenImpulso.totalSiPagaHoy;
+    const montoSiPagaManana = resumenImpulso.totalSiPagaManana;
+    const montoSiPagaFechaLimite = resumenImpulso.totalFechaLimite;
+    const montoSiPagaVencido = resumenImpulso.totalVencido;
 
     const nuevoPrestamo: Omit<Prestamo, 'id'> = {
       usuarioId,
       monto,
       montoSiPagaHoy,
+      montoSiPagaManana,
       montoSiPagaFechaLimite,
       montoSiPagaVencido,
       fechaSolicitud: Date.now(),
